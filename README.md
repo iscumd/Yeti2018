@@ -1,2 +1,2 @@
 # Yeti2018
-Make Yeti Greater
+Make Yeti Great Again
