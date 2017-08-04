@@ -1,7 +1,10 @@
-float32 x
-float32 y
-#x and y are relative to robot position and orientation
-float32 r
-#radius of obstacle
-bool dynamic
-#if object is or was previously moving, i.e. this is a new obstacle in this position
+float64  x
+float64  y
+float64  distance
+int32  objStartIndex
+int32  objEndIndex
+float64  obsRoughSize
+float64  obsLineSize
+lidar_point startPoint
+lidar_point endPoint
+bool isAMovingObstacle
