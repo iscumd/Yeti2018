@@ -57,6 +57,7 @@ add_message_files(
   robot_position.msg
   target.msg
   turn.msg
+  lidar_point.msg
 )
 
 ## Generate services in the 'srv' folder
