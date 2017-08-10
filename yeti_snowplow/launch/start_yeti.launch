@@ -1,7 +1,7 @@
 <launch>
 	<!-- Joystick -->
 	<node pkg="joy" type="joy_node" name="joy_node" />
-	<node pkg="isc_shared" type="joystick" name="joystick"/>
+	<node pkg="isc_shared" type="joystick_xbox360" name="joystick_xbox360"/>
 	<param name="manual_control_speed_multiplier" value="0.3" />
 	<param name="manual_control_turn_multiplier" value="0.2" />
 	<node pkg="isc_shared" type="manual_control" name="manual_control"/>
