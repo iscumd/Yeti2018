@@ -1,31 +1,16 @@
 #pragma once
-// Blob.h
-
-#ifndef MY_BLOB
-#define MY_BLOB
-
 #include<opencv2/core/core.hpp>
 #include<opencv2/highgui/highgui.hpp>
 #include<opencv2/imgproc/imgproc.hpp>
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-class Blob {
+class Blob
+{
 public:
-	// member variables ///////////////////////////////////////////////////////////////////////////
 	std::vector<cv::Point> contour;
-
-	cv::Rect boundingRect;
-
-	cv::Point centerPosition;
-
-	double dblDiagonalSize;
-
-	double dblAspectRatio;
-	
-
-	// function prototypes ////////////////////////////////////////////////////////////////////////
+	cv::Rect bounding_Rect;
+	cv::Point center_Position;
+	double dbl_Diagonal_Size;
+	double dbl_Aspect_Ratio;
 	Blob(std::vector<cv::Point> _contour);
-
 };
 
-#endif    // MY_BLOB
