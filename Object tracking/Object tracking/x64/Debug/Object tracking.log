@@ -1,3 +1,8 @@
 ﻿  main.cpp
+<<<<<<< HEAD
   Object tracking.vcxproj -> c:\users\siddharth\documents\visual studio 2017\Projects\Object tracking\x64\Debug\Object tracking.exe
   Object tracking.vcxproj -> c:\users\siddharth\documents\visual studio 2017\Projects\Object tracking\x64\Debug\Object tracking.pdb (Partial PDB)
+=======
+  Object tracking.vcxproj -> C:\Users\Siddharth\Documents\Visual Studio 2017\Projects\Object tracking\x64\Debug\Object tracking.exe
+  Object tracking.vcxproj -> C:\Users\Siddharth\Documents\Visual Studio 2017\Projects\Object tracking\x64\Debug\Object tracking.pdb (Partial PDB)
+>>>>>>> 435da048d865c0a2542740ce6cd1f731bed7b60f
