@@ -102,15 +102,15 @@ qtcreator-*
 CATKIN_IGNORE
 
 # VS 2017 file
-.sln
-.vcxproj.*
-.tlog
-.log
-.obj
-.idb
-.pdb
-.lastbuildstate
-.exe
-.ilk
+*.sln
+*.vcxproj
+*.tlog
+*.log
+*.obj
+*.idb
+*.pdb
+*.lastbuildstate
+*.exe
+*.ilk
 # VS Code files
 /.vscode
