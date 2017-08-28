@@ -23,6 +23,7 @@ static int sumOfPoints;
 static int obsSizeNum;
 static bool isAlreadyLinking = false;
 static bool isThereAnObstacle = false;
+static double sumOfHeadings = 0.0;
 static double obstacleStopThreshold;
 static double movingObstacleSize = 0.45;
 static double movingObstacleThresh = 0.07;
@@ -45,11 +46,12 @@ void clearObstacles()
     obstacles.clear();
 }
 
-void linkPoint(double currPointDist, double twoPointsDist)
+void linkPoint(double currPointDist,double currentTheta, double twoPointsDist)
 {
     linkedCount += 1;
     sumOfPoints += currPointDist;
     obsSizeNum += twoPointsDist;
+    sumOfHeadings += currentTheta;
 }
 
 double distanceCalculator(yeti_snowplow::lidar_point lidarPoint1, yeti_snowplow::lidar_point lidarPoint2)
@@ -68,7 +70,10 @@ void convertPointCloudToClass()
         yeti_snowplow::lidar_point lidar_point;
         lidar_point.x = lidarData[i].x;
         lidar_point.y = lidarData[i].y;
-        lidar_point.distanceFromRobot = distanceFromRobot(lidarData[i].x, lidarData[i].y);
+        lidar_point.theta = atan(lidar_point.y/lidar_point.x);
+        if((lidar_point.x / cos(lidar_point.theta)) == (lidar_point.y / sin(lidar_point.theta)))
+        lidar_point.distanceFromRobot = lidar_point.x / cos(lidar_point.theta);
+        
         lmsData.push_back(lidar_point);
     }
 }
@@ -76,12 +81,13 @@ void addAndAnalyzeObstacle(int lastLinkedIndex, yeti_snowplow::obstacle& obstacl
 {
     double index = (lastLinkedIndex - linkedCount) / 2;
     double mag = sumOfPoints / linkedCount;
+    double avgTheta = sumOfHeadings / linkedCount;
     bool isOutsideTheField = false;
-    double robotPositionX = 0.0;
-    double robotPositionY = 0.0;
-    double theta = atan(robotPositionY / robotPositionX);
-    obstacle.x = mag * cos(theta);
-    obstacle.y = mag * sin(theta);
+    // double robotPositionX = 0.0;
+    // double robotPositionY = 0.0;
+    //double theta = atan(robotPositionY / robotPositionX);
+    obstacle.x = mag * cos(avgTheta);
+    obstacle.y = mag * sin(avgTheta);
 
     if (mag < maxRadius || linkedCount > highThresh || linkedCount < lowThresh)
     {
@@ -143,7 +149,7 @@ void findObstacles()
                 double pointsDistance = distanceCalculator(currentPoint, nextPoint);
                 if(pointsDistance < nonSeparationThresh * j * MM2M)
                 {
-                    linkPoint(currentPoint.distanceFromRobot, pointsDistance);
+                    linkPoint(currentPoint.distanceFromRobot, currentPoint.theta, pointsDistance);
                     isPointLinked = true;
                     if(!isAlreadyLinking)
                     { 

@@ -6,19 +6,11 @@
 ros::Publisher turnPub;
 
 void obstaclePositionsCallback(const yeti_snowplow::obstacles::ConstPtr& obstaclePositions){
-	// geometry_msgs::Twist msg;
-	// msg.angular.z = joy->A ? joy->LeftStick_UD : 0; //left
-	// msg.linear.x = joy->A ? joy->LeftStick_UD : 0; //right
-	// ROS_INFO("%s left=%f right=%f", joy->A ? "on" : "off", msg.angular.z, msg.linear.x);
-	// turnPub.publish(msg);
+	
 }
 
 void robotPositionCallback(const yeti_snowplow::robot_position::ConstPtr& robotPosition){
-	// geometry_msgs::Twist msg;
-	// msg.angular.z = joy->A ? joy->LeftStick_UD : 0; //left
-	// msg.linear.x = joy->A ? joy->LeftStick_UD : 0; //right
-	// ROS_INFO("%s left=%f right=%f", joy->A ? "on" : "off", msg.angular.z, msg.linear.x);
-	// turnPub.publish(msg);
+	
 }
 
 int main(int argc, char **argv){
