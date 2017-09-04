@@ -1,7 +1,9 @@
-#include "ros/ros.h"
+#include <ros/ros.h>
 #include <vector>
 #include <math.h>
+#include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud.h>
+#include <laser_geometry/laser_geometry.h>
 #include <yeti_snowplow/robot_position.h>
 #include <yeti_snowplow/obstacle.h>
 #include <yeti_snowplow/obstacles.h>
@@ -193,14 +195,18 @@ void localizationCallback(const yeti_snowplow::robot_position::ConstPtr& positio
     return;
 }
 
-void scanCallback(const sensor_msgs::PointCloud::ConstPtr& scannedData)
+void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scannedData)
 {
     /* This fires every time a new obstacle scan is published */
     //location contains an array of points, which contains an x and a y relative to the robot
-    lidarData = scannedData->points;
+
+    //Projecting LaserScanData to PointCloudData
+    laser_geometry::LaserProjection projector_;
+    sensor_msgs::PointCloud cloudData;
+    projector_.projectLaser(*scannedData, cloudData);
+    lidarData = cloudData.points;
     convertPointCloudToClass();
     findObstacles();
-    
 }
 
 
@@ -215,7 +221,7 @@ int main(int argc, char **argv){
 
     ros::Subscriber localizationSub = n.subscribe("robot_location", 1, localizationCallback);
 
-    ros::Subscriber scanSub = n.subscribe("laser_scan_point_cloud", 1, scanCallback);
+    ros::Subscriber scanSub = n.subscribe("scan", 1, scanCallback);
 
     ros::Publisher obstaclePub;//ROS obstacle publisher
 
