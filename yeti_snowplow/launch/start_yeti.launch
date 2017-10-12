@@ -5,6 +5,29 @@
 	<param name="manual_control_speed_multiplier" value="0.3" />
 	<param name="manual_control_turn_multiplier" value="0.2" />
 	<node pkg="isc_shared" type="manual_control" name="manual_control"/>
+
+	<!-- === Yeti Main === -->
+	<!-- LiDAR -->
+	<arg name="host" default="192.168.0.100" />
+	<node pkg="isc_sick" name="isc_sick" type="LMS1xx_node">
+		<param name="host" value="$(arg host)" />
+		<param name="frame_id" value="sick_laser_link" />
+	</node>
+	<!-- Obstacle Detection -->
+	<node pkg="yeti_snowplow" type="yeti_scan_to_xy" name="yeti_scan_to_xy" output="screen" />
+	<node pkg="yeti_snowplow" type="obstacle_detection" name="obstacle_detection" output="screen" />
+	<!-- Localization -->
+	<node pkg="yeti_snowplow" type="localization_node" name="localization_node" output="screen" />
+	<!-- Obstacle Reactance -->
+	<node pkg="yeti_snowplow" type="obstacle_reaction" name="obstacle_reaction" output="screen" />
+	<!-- Waypoint -->
+	<node pkg="yeti_snowplow" type="yeti_waypoint_selection" name="yeti_waypoint_selection" output="screen" />
+	<param name="navigationFile" value="$(find yeti_snowplow)/data/navigationDay1.txt" />
+	<!-- Navigation PID -->
+	<node pkg="yeti_snowplow" type="navigation_pid" name="navigation_pid" output="screen" />
+	<!-- Auto Control Logic -->
+	<node pkg="yeti_snowplow" type="auto_control_logic" name="auto_control_logic" output="screen" />
+	<param name="auto_control_logic_enable_logging" value="false" />
 	
 	<!-- Drive Mode Control -->
 	<node pkg="yeti_snowplow" type="yeti_drive_mode_control" name="yeti_drive_mode_control" output="screen"/>
