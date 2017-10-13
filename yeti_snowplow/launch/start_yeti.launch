@@ -17,17 +17,18 @@
 	<node pkg="yeti_snowplow" type="yeti_scan_to_xy" name="yeti_scan_to_xy" output="screen" />
 	<node pkg="yeti_snowplow" type="obstacle_detection" name="obstacle_detection" output="screen" />
 	<!-- Localization -->
+	<param name="localizaion_landmark_location_file" value="$(find yeti_snowplow)/data/landmark_locations_Qualification.txt" />
 	<node pkg="yeti_snowplow" type="localization_node" name="localization_node" output="screen" />
 	<!-- Obstacle Reactance -->
 	<node pkg="yeti_snowplow" type="obstacle_reaction" name="obstacle_reaction" output="screen" />
 	<!-- Waypoint -->
-	<node pkg="yeti_snowplow" type="yeti_waypoint_selection" name="yeti_waypoint_selection" output="screen" />
 	<param name="navigationFile" value="$(find yeti_snowplow)/data/navigationDay1.txt" />
+	<node pkg="yeti_snowplow" type="yeti_waypoint_selection" name="yeti_waypoint_selection" output="screen" />
 	<!-- Navigation PID -->
 	<node pkg="yeti_snowplow" type="navigation_pid" name="navigation_pid" output="screen" />
 	<!-- Auto Control Logic -->
-	<node pkg="yeti_snowplow" type="auto_control_logic" name="auto_control_logic" output="screen" />
 	<param name="auto_control_logic_enable_logging" value="false" />
+	<node pkg="yeti_snowplow" type="auto_control_logic" name="auto_control_logic" output="screen" />
 	
 	<!-- Drive Mode Control -->
 	<node pkg="yeti_snowplow" type="yeti_drive_mode_control" name="yeti_drive_mode_control" output="screen"/>
