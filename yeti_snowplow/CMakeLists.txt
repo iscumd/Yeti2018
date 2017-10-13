@@ -154,12 +154,15 @@ include_directories(
 # )
 
 # ADD NEW CPPs HERE
+add_executable(auto_control_logic src/auto_control_logic.cpp)
+add_dependencies(auto_control_logic ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(auto_control_logic ${catkin_LIBRARIES})
+
 add_executable(yeti_drive_mode_control src/yeti_drive_mode_control.cpp)
 add_dependencies(yeti_drive_mode_control ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(yeti_drive_mode_control ${catkin_LIBRARIES})
 
-#add_executable(navigation_pid src/navigation_pid.cpp src/containers/Target.cpp src/containers/LocationPoint.cpp src/containers/CVAR.cpp)
-add_executable(navigation_pid src/navigation_pid.cpp src/containers/CVAR.cpp)
+add_executable(navigation_pid src/navigation_pid.cpp)
 add_dependencies(navigation_pid ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(navigation_pid ${catkin_LIBRARIES})
 
