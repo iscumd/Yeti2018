@@ -186,6 +186,10 @@ add_executable(localization_node src/localization_node.cpp)
 add_dependencies(localization_node ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(localization_node ${catkin_LIBRARIES})
 
+add_executable(buffer src/buffer.cpp)
+add_dependencies(buffer ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(buffer ${catkin_LIBRARIES})
+
 #############
 ## Install ##
 #############
