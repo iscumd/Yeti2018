@@ -2,14 +2,12 @@
 #include <iostream>
 #include <math.h>
 #include "yeti_snowplow/location_point.h"
+#include "yeti_snowplow/obstacle.h"
 #include <vector>
 using namespace std;
 
-int main()
-{
-    
-}
-# define M_PI           3.14159265358979323846  /* pi */
+
+#define M_PI           3.14159265358979323846  /* pi */
 class Buffer
 {
 private:
@@ -37,7 +35,7 @@ public:
         return angle;
     }
     
-    static double distanceCalculator(location_point point1, location_point point2)
+    static double distance(location_point point1, location_point point2)
     {
         return sqrt(pow((point2.x - point1.x), 2)- pow((point2.y - point1.y), 2));
     }
@@ -80,4 +78,108 @@ public:
 
         return true;//return true when it is possible for the robot to take this turn angle without hitting obstacles
     }//end CombinedVectorScan
+
+    static bool combinedCheckAngle(double targetAngle)
+    {
+        location_point leftWheel;
+        location_point rightWheel;
+        location_point target;
+
+        leftWheel.y = 0;
+        rightWheel.y = 0;
+
+        leftWheel.x = -combinedHalfRobotWidth;
+        rightWheel.x = combinedHalfRobotWidth;
+
+        target.x = combinedBufferLength * sin(targetAngle);
+        target.y = combinedBufferLength * cos(targetAngle);
+
+        return (combinedVectorScan(leftWheel, target) && combinedVectorScan(rightWheel, target));
+    }
+
+    static double combinedRightWheelScan(lidar_point target)
+    {
+        location_point source;
+        double targetAngle = adjust_angle(atan2(target.x, target.y), 2.0*M_PI);
+
+        double samplePhi;
+        int index = 0;
+
+        source.x = combinedHalfRobotWidth;
+        source.y = 0;
+
+        do{
+            location_point samplePoint;
+            samplePoint.x = combinedBufferLength * sin(targetAngle - SAMPLING_ANGLE * index);
+            samplePoint.y = combinedBufferLength * cos(targetAngle - SAMPLING_ANGLE * index)
+            samplePhi = adjust_angle(atan2(samplePoint.x, samplePoint.y), 2.0 * M_PI);
+
+            if(combinedVectorScan(source, samplePoint))
+            {
+                if(combinedCheckAngle(samplePhi))
+                {
+                    if(i == 0)
+                        return 0;
+                    
+                    return sample_phi;
+                }
+            }
+            index++;
+        }while(index < ANGLE_SAMPLES);
+
+        return DOOM;
+    }
+
+    static double combinedLeftWheelScan(lidar_point target)
+    {
+        location_point source;
+        double targetAngle = adjust_angle(atan2(target.x, target.y), 2.0*M_PI);
+
+        double samplePhi;
+        int index = 0;
+
+        source.x = -combinedHalfRobotWidth;
+        source.y = 0.0;
+
+        do{
+            location_point samplePoint;
+            samplePoint.x = combinedBufferLength * sin(targetAngle + SAMPLING_ANGLE * index);
+            samplePoint.y = combinedBufferLength * cos(targetAngle + SAMPLING_ANGLE * index)
+            samplePhi = adjust_angle(atan2(samplePoint.x, samplePoint.y), 2.0 * M_PI);
+
+            if(combinedVectorScan(source, samplePoint))
+            {
+                if(combinedCheckAngle(samplePhi))
+                {
+                    if(i == 0)
+                        return 0;
+                    
+                    return sample_phi;
+                }
+            }
+            index++;
+        }while(index < ANGLE_SAMPLES);
+
+        return DOOM;
+    }
+
+    static vector<obstacle> combinedUpdatePoints(const vector<geometry_msgs::Point32> lidarPoints);
+    {
+        combinedBufPoints.clear();
+        badCount = 0; 
+
+        foreach(auto lidarPoint : lidarPoints)
+        {
+            if(sqrt(pow(lidarPoint.x, 2) + pow(lidarPoint.y, 2)) < combinedBufferLength)
+            {
+                if(idarPoint.y > 0)
+                {
+                    geometry::Point32 locationPoint;
+                    locationPoint.x = lidarPoint.x;
+                    locationPoint.y = lidarPoint.y;
+                    combinedBufPoints.push_back(locationPoint);
+                }
+            }
+        }
+    }
 };
