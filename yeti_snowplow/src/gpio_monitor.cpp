@@ -1,7 +1,7 @@
 #include "ros/ros.h"
 #include "wiringPi.h"
-#include "yeti_snowplow/gpio_inputs"
-#include "yeti_snowplow/gpio_leds"
+#include "yeti_snowplow/gpio_inputs.h"
+#include "yeti_snowplow/gpio_leds.h"
 
 /**
  * RASPBERRY PI 3B PINS
