@@ -1,6 +1,7 @@
 #include "ros/ros.h"
 #include "wiringPi.h"
-#include "yeti_snowplow/gpio_inputs.h"
+#include "yeti_snowplow/gpio_inputs"
+#include "yeti_snowplow/gpio_leds"
 
 /**
  * RASPBERRY PI 3B PINS
@@ -34,13 +35,13 @@ void initPins() {
     pinMode(LED1, OUTPUT);
 }
 
-void updateState() {
+void updateInputs() {
     estop = digitalRead(ESTOP) == 0 ? false : true;
     button1 = digitalRead(BUTTON1) == 0 ? false : true;
     switch1 = digitalRead(SWITCH1) == 0 ? false : true;
-    gpio_inputs.estop = estop;
-    gpio_inputs.button1 = button1;
-    gpio_inputs.switch1 = switch1;
+    inputs.estop = estop;
+    inputs.button1 = button1;
+    inputs.switch1 = switch1;
     gpioPub.publish(gpio_inputs);
 }
 
@@ -61,7 +62,8 @@ int main(int argc, char **argv) {
     wiringPiSetup(); // Enables WiringPi for GPIO control
 
     initPins();
-    updateState();
+    updateLeds();
+    updateInputs();
 
     gpioSub = n.subscribe("gpio/leds", 5, ledCallback);
     gpioPub = n.advertise<yeti_snowplow::gpio_inputs>("gpio/inputs", 5);
