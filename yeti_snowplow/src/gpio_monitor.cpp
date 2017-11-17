@@ -1,5 +1,5 @@
 #include "ros/ros.h"
-#include "wiringPi/wiringPi.h"
+#include "wiringPi.h"
 #include "yeti_snowplow/gpio_inputs.h"
 
 /**

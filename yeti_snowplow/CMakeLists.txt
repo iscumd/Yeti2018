@@ -21,7 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-
+find_library(wiringPi wiringPi ./src/wiringPi)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -178,7 +178,7 @@ target_link_libraries(obstacle_detection ${catkin_LIBRARIES})
 
 add_executable(gpio_monitor src/gpio_monitor.cpp)
 add_dependencies(gpio_monitor ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(gpio_monitor ${catkin_LIBRARIES})
+target_link_libraries(gpio_monitor ${catkin_LIBRARIES} ${wiringPi})
 
 add_executable(yeti_waypoint_selection src/yeti_waypoint_selection.cpp)
 add_dependencies(yeti_waypoint_selection ${PROJECT_NAME}_generate_messages_cpp)
