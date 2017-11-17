@@ -42,7 +42,7 @@ void updateInputs() {
     inputs.estop = estop;
     inputs.button1 = button1;
     inputs.switch1 = switch1;
-    gpioPub.publish(gpio_inputs);
+    gpioPub.publish(inputs);
 }
 
 void updateLeds() {
@@ -51,7 +51,7 @@ void updateLeds() {
     }
 }
 
-void ledCallback(const yeti_snowplow::gpio_leds &leds) {
+void ledCallback(const yeti_snowplow::gpio_leds::ConstPtr& leds) {
     led1 = leds->led1;
     updateLeds();
 }
