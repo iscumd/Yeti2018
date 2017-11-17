@@ -9,21 +9,21 @@
  * 
  * https://www.raspberrypi.org/documentation/usage/gpio-plus-and-raspi2/
  */
-#define ESTOP 2;
-#define BUTTON1 3;
-#define SWITCH1 4;
+#define ESTOP 2
+#define BUTTON1 3
+#define SWITCH1 4
 
-#define LED1 14; // meant for drive mode, can change name later
+#define LED1 14 // meant for drive mode, can change name later
 
 ros::Publisher gpioPub;
 ros::Subscriber gpioSub;
 
-yeti_snowplow::gpio_inputs;
+yeti_snowplow::gpio_inputs inputs;
 bool estop;
 bool button1;
 bool switch1;
 
-yeti_snowplow::gpio_leds;
+yeti_snowplow::gpio_leds leds;
 bool led1;
 
 void initPins() {
