@@ -1,7 +1,13 @@
 #include "ros/ros.h"
+#include <geometry_msgs/Pose2D.h>
+#include <sensor_msgs/PointCloud.h>
 #include "yeti_snowplow/obstacles.h"
+#include "yeti_snowplow/obstacle.h"
 #include "yeti_snowplow/robot_position.h"
+#include "yeti_snowplow/location_point.h"
+#include "yeti_snowplow/lidar_point.h"
 #include "yeti_snowplow/turn.h"
+#include "yeti_snowplow/target"
 #include "buffer.cpp"
 #include <math.h>
 #include <vector>
