@@ -1,13 +1,22 @@
-#include "ros/ros.h"
-#include <iostream>
-#include <math.h>
-#include "yeti_snowplow/location_point.h"
-#include "yeti_snowplow/obstacle.h"
-#include <vector>
-using namespace std;
+#ifndef BUFFER_H
+#define BUFFER_H
 
+#include "ros/ros.h"
+#include <geometry_msgs/Pose2D.h>
+#include <sensor_msgs/PointCloud.h>
+#include "yeti_snowplow/obstacles.h"
+#include "yeti_snowplow/obstacle.h"
+#include "yeti_snowplow/robot_position.h"
+#include "yeti_snowplow/location_point.h"
+#include "yeti_snowplow/lidar_point.h"
+#include "yeti_snowplow/turn.h"
+#include "yeti_snowplow/target"
+#include "buffer.cpp"
+#include <math.h>
+#include <vector>
 
 #define M_PI           3.14159265358979323846  /* pi */
+
 class Buffer
 {
 private:
@@ -27,7 +36,7 @@ public:
     const double DOOM = (-135.0) * 2.0 * Math.PI / 360.0;//this is bad....
     vector<location_point> combinedBufPoints;//stores the list of LiDAR points which are within the buffer of the robot.
     
-    static double adjust_angle(double angle, double circle)//this function limits the angle between (-pi & pi) or (-180 & 180)
+    double adjust_angle(double angle, double circle)//this function limits the angle between (-pi & pi) or (-180 & 180)
     {   //circle = 2pi for radians, 360 for degrees
         Subtract multiples of circle
         angle -= floor(angle / circle) * circle;
@@ -35,14 +44,14 @@ public:
         return angle;
     }
     
-    static double distance(location_point point1, location_point point2)
+    double distance(location_point point1, location_point point2)
     {
         return sqrt(pow((point2.x - point1.x), 2)- pow((point2.y - point1.y), 2));
     }
     //this function checks a turn angle (provided by wheel scans) to see if there is anything in the way of the desired turn angle.
     //It returns true if the robot can turn that direction without hittinemmg an obstacle, and returns false if there is something in
     //the way of the entered turn angle.
-    static bool combinedVectorScan(location_point source, location_point destination)
+    bool combinedVectorScan(location_point source, location_point destination)
     {
         double target_angle = adjust_angle(Math.atan(destination.X - source.X, destination.Y - source.Y), 2.0* M_PI  ); //limit angle between (-pi & pi) or (-180 & 180)
         double target_dist = distanceCalculator(destination, source); //find distance between corner of wheel to desired target. this equals Buffer length
@@ -79,7 +88,7 @@ public:
         return true;//return true when it is possible for the robot to take this turn angle without hitting obstacles
     }//end CombinedVectorScan
 
-    static bool combinedCheckAngle(double targetAngle)
+    bool combinedCheckAngle(double targetAngle)
     {
         location_point leftWheel;
         location_point rightWheel;
@@ -97,7 +106,7 @@ public:
         return (combinedVectorScan(leftWheel, target) && combinedVectorScan(rightWheel, target));
     }
 
-    static double combinedRightWheelScan(lidar_point target)
+    double combinedRightWheelScan(lidar_point target)
     {
         location_point source;
         double targetAngle = adjust_angle(atan2(target.x, target.y), 2.0*M_PI);
@@ -130,7 +139,7 @@ public:
         return DOOM;
     }
 
-    static double combinedLeftWheelScan(lidar_point target)
+    double combinedLeftWheelScan(lidar_point target)
     {
         location_point source;
         double targetAngle = adjust_angle(atan2(target.x, target.y), 2.0*M_PI);
@@ -163,7 +172,7 @@ public:
         return DOOM;
     }
 
-    static vector<obstacle> combinedUpdatePoints(const vector<geometry_msgs::Point32> lidarPoints);
+    vector<obstacle> combinedUpdatePoints(const vector<geometry_msgs::Point32> lidarPoints);
     {
         combinedBufPoints.clear();
         badCount = 0; 
@@ -183,3 +192,5 @@ public:
         }
     }
 };
+
+#endif

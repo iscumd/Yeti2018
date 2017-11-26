@@ -11,6 +11,7 @@
 #include "buffer.cpp"
 #include <math.h>
 #include <vector>
+#include <algorithm>
 
 class ObstacleReaction
 {
@@ -19,6 +20,23 @@ public:
 	// {
 	// 	obstacles = groupOfObstacles->obstacles;
 	// }
+	ObstacleReaction()
+	{
+		wayPointID = 0;
+
+		turnPub = n.advertise<yeti_snowplow::turn>("obstacle_reaction_turn", 1000);
+		obstaclePositionsSub = n.subscribe("obstacles", 1000, obstaclePositionsCallback);
+		robotPositionSub = n.subscribe("robot_position", 1000, &obstacleReaction::robotPositionCallback, this);
+		waypointClient = n.serviceClient<yeti::target>("waypoint");
+		scanSub = n.subscribe("obstacles", 1000, &obstacleReaction::scanCallback,this);
+		speedPub  = n.advertise<geometry::Twist>("motor_speed", 1000);
+		
+		nh.param("maximum_navigation_speed", maxSpeed, 0.7);
+		nh.param("obstacle_return_boost", turnBoost, -1.2);
+		nh.param("obstacle_reaction_reverse_speed", reverseSpeed, -0.5);
+
+		
+	}
 	void robotPositionCallback(const geometry::Pose2D::ConstPtr& robotPosition)
 	{
 		robotLocation.x = robotPosition->x;
@@ -26,20 +44,24 @@ public:
 		robotLocation.theta = robotPosition.theta;
 	}
 
-	void nextWaypointCallback(const yeti_snowplow::waypoint::ConstPtr& nextWayPointInfo)
+	void getNextWaypoint()
 	{
-		yeti::target wayPointInfo = nextWayPointInfo;
-		turn = wayPointInfo->dir;
-		navSpeed = wayPointInfo->speed;
-		nextWayPoint = wayPointInfo->location;
+		yeti::target wayPointInfo;
+		wayPointInfo.request.ID = wayPointID; 
+		
 
 		if(waypointClient.call(wayPointInfo))
 		{
 			ROS_INFO("Calling waypoint service");
+			dir = wayPointInfo.response.waypoint.dir;
+			navSpeed = wayPointInfo.response.waypoint.speed;
+			nextWayPoint = wayPointInfo.response.waypoint.location;
 		}
 		else{
 			ROS_INFO("Failed to call service")
 		}
+
+		wayPointID++;
 	}
 
 	void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scannedData)
@@ -56,13 +78,17 @@ public:
 
 	void obstacleReactance()
 	{
-		Buffer.combinedUpdatePoints(lidarData);
+		Buffer buffer;
+		geometry::msgs msg;
+		yeti::turn turnMsg;
+		getNextWaypoint();
+		buffer.combinedUpdatePoints(lidarData);
 		//Creates List of LiDAR points which have a positive Y value, and are within the Buffer distance threshold
 		
 		//look at angle needed to go to target waypoint, if there is an obstacle in the way, then find what turn angle is needed to avoid it to the right. 
-		double Right = Buffer.combinedRightWheelScan(nextWayPoint);
+		double rightAngle = buffer.combinedRightWheelScan(nextWayPoint);
 		//look at angle needed to go to target waypoint, if there is an obstacle in the way, then find what turn angle is needed to avoid it to the left. 
-		double Left = Buffer.combinedLeftWheelScan(nextWayPoint);
+		double leftAngle = buffer.combinedLeftWheelScan(nextWayPoint);
 
 		
 		for(obstacle object : obstacles)
@@ -92,8 +118,48 @@ public:
             lSpeed = (float)((speed + turnBoost * turn) * maxSpeed * navSpeed);//controlvarspeed is read in from text file, and limits speed by a percentage
             rSpeed = (float)((speed - turnBoost * turn) * maxSpeed * navSpeed);
 		}
+		else if (rightAngle == buffer.DOOM && leftAngle == buffer.DOOM )//There is no way to avoid anything to the left or the right, so back up.
+        {
+            leftSpeed = reverseSpeed * (float)maxSpeed * (float) .25;
+            rightSpeed = reverseSpeed * (float)maxSpeed * (float) .25;
+            ROS_INFO("I reached DOOM!");
+        }
+		else
+		{
+			if(abs(rightAngle - turn) <= abs(leftAngle - turn))
+            {
+                //move right of obstacle
+                turn = rightAngle;
+            }
+            else if (abs(rightAngle - turn) > abs(leftAngle - turn))
+            {
+                //move Left of obstacle
+                turn = leftAngle;
+            }
+            //speed slower as turn steeper 
+            speed = 1 / (1 + 1 * abs(turn)) * (double)dir;
+            speed = (double)dir * min(abs(speed), 1.0);
+            leftSpeed = (float)((speed + turnBoost * .5 *  turn) * maxSpeed  * navSpeed);
+            rightSpeed = (float)((speed - turnBoost * .5* turn) * maxSpeed *   navSpeed);
+		}
+
+		msg.linear.x = leftSpeed;
+		msg.linear.y = rightSpeed;
+		speedPub.publish(msg);
+		turnMsg.angle = turn;
+		turnMsg.stop = movingObstacleDetected;
+		turnPub.publish(turnMsg);
+
 	}
 private:
+//ROS Variables
+	ros::NodeHandle n;
+	ros::Publisher turnPub;
+	//ros::Subscriber obstaclePositionsSub ;
+	ros::Subscriber robotPositionSub;
+	ros::ServiceClient waypointClient;
+	ros::Subscriber scanSub;
+	ros::Publisher speedPub;
 	vector<obstacle> obstacles;
 	vector<obstacle> obstaclesInFront;
 	vector<geometry_msgs::Point32> lidarData;
@@ -106,24 +172,25 @@ private:
 	double navSpeed;
 	double speed;
 	double turn;
+	double turnBoost;
+	double maxSpeed;
+	double reverseSpeed;
 	bool movingObstacleDetected;
+	int dir;
+	int wayPointID;
 };
 
 int main(int argc, char **argv){
 	ros::init(argc, argv, "obstacle_reaction");
 
-
-	ros::NodeHandle n;
-
-	ros::Publisher turnPub;
-	turnPub = n.advertise<yeti_snowplow::turn>("obstacle_reaction_turn", 1000);
-
-	// ros::Subscriber obstaclePositionsSub = n.subscribe("obstacles", 1000, obstaclePositionsCallback);
-	ros::Subscriber robotPositionSub = n.subscribe("robot_position", 1000, robotPositionCallback);
-	ros::ServiceClient waypointClient = n.serviceClient<yeti::target>("waypoint");
-	ros::Subscriber scanSub = n.subscribe("obstacles", 1000, scanCallback);
-
-	ros::spin();
+	ObstacleReaction obstacleReaction;
+	
+	while(ros::ok())
+	{
+		ros::spin();
+		obstacleReaction.obstacleReactance();
+	}
+	
 	
 	return 0;
 }
