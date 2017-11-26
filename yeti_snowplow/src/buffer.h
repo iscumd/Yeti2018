@@ -2,6 +2,7 @@
 #define BUFFER_H
 
 #include "ros/ros.h"
+#include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Pose2D.h>
 #include <sensor_msgs/PointCloud.h>
 #include "yeti_snowplow/obstacles.h"
@@ -10,8 +11,7 @@
 #include "yeti_snowplow/location_point.h"
 #include "yeti_snowplow/lidar_point.h"
 #include "yeti_snowplow/turn.h"
-#include "yeti_snowplow/target"
-#include "buffer.cpp"
+#include "yeti_snowplow/target.h"
 #include <math.h>
 #include <vector>
 
