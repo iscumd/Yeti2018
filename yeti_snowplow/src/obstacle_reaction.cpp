@@ -2,14 +2,13 @@
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Pose2D.h>
 #include <sensor_msgs/PointCloud.h>
-#include "yeti_snowplow/obstacles.h"
-#include "yeti_snowplow/obstacle.h"
-#include "yeti_snowplow/robot_position.h"
-#include "yeti_snowplow/location_point.h"
-#include "yeti_snowplow/lidar_point.h"
-#include "yeti_snowplow/turn.h"
-#include "yeti_snowplow/target.h"
-#include "buffer.h"
+#include <yeti_snowplow/obstacles.h>
+#include <yeti_snowplow/obstacle.h>
+#include <yeti_snowplow/location_point.h>
+#include <yeti_snowplow/lidar_point.h>
+#include <yeti_snowplow/turn.h>
+#include <yeti_snowplow/target.h>
+#include <buffer.h>
 #include <math.h>
 #include <vector>
 #include <algorithm>
@@ -143,7 +142,7 @@ public:
             leftSpeed = (float)((speed + turnBoost * .5 *  turn) * maxSpeed  * navSpeed);
             rightSpeed = (float)((speed - turnBoost * .5* turn) * maxSpeed *   navSpeed);
 		}
-
+		//Needs review
 		msg.linear.x = leftSpeed;
 		msg.linear.y = rightSpeed;
 		speedPub.publish(msg);
