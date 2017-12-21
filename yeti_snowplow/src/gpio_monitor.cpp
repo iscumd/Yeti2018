@@ -67,6 +67,7 @@ int main(int argc, char **argv) {
 
     gpioSub = n.subscribe("gpio/leds", 5, ledCallback);
     gpioPub = n.advertise<yeti_snowplow::gpio_inputs>("gpio/inputs", 5);
+    gpioPub.publish(inputs);
 
     ros::spin();
     return 0;
