@@ -1,5 +1,4 @@
 #include "ros/ros.h"
-<<<<<<< HEAD
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Pose2D.h>
 #include <sensor_msgs/PointCloud.h>
@@ -13,11 +12,9 @@
 #include <math.h>
 #include <vector>
 #include <algorithm>
-=======
 #include "yeti_snowplow/obstacles.h"
 //#include "yeti_snowplow/robot_position.h"
 #include "yeti_snowplow/turn.h"
->>>>>>> 8bc267b25235170faf9f51138b12a3c463170d58
 
 class ObstacleReaction
 {

@@ -172,19 +172,13 @@ add_executable(obstacle_detection src/obstacle_detection.cpp)
 add_dependencies(obstacle_detection ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(obstacle_detection ${catkin_LIBRARIES})
 
-<<<<<<< HEAD
 add_executable(obstacle_reaction src/obstacle_reaction.cpp src/buffer.h)
 add_dependencies(obstacle_reaction ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(obstacle_reaction ${catkin_LIBRARIES})
-=======
-#add_executable(obstacle_reaction src/obstacle_reaction.cpp)
-#add_dependencies(obstacle_reaction ${PROJECT_NAME}_generate_messages_cpp)
-#target_link_libraries(obstacle_reaction ${catkin_LIBRARIES})
 
 add_executable(gpio_monitor src/gpio_monitor.cpp)
 add_dependencies(gpio_monitor ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(gpio_monitor ${catkin_LIBRARIES} ${wiringPi})
->>>>>>> 8bc267b25235170faf9f51138b12a3c463170d58
 
 add_executable(yeti_waypoint_selection src/yeti_waypoint_selection.cpp)
 add_dependencies(yeti_waypoint_selection ${PROJECT_NAME}_generate_messages_cpp)
