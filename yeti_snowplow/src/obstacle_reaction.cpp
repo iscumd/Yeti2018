@@ -1,4 +1,5 @@
 #include "ros/ros.h"
+<<<<<<< HEAD
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Pose2D.h>
 #include <sensor_msgs/PointCloud.h>
@@ -12,6 +13,11 @@
 #include <math.h>
 #include <vector>
 #include <algorithm>
+=======
+#include "yeti_snowplow/obstacles.h"
+//#include "yeti_snowplow/robot_position.h"
+#include "yeti_snowplow/turn.h"
+>>>>>>> 8bc267b25235170faf9f51138b12a3c463170d58
 
 class ObstacleReaction
 {
@@ -61,6 +67,7 @@ public:
 			ROS_INFO("Failed to call service")
 		}
 
+<<<<<<< HEAD
 		wayPointID++;
 	}
 
@@ -75,6 +82,11 @@ public:
 		projector_.projectLaser(*scannedData, cloudData);
 		lidarData = cloudData.points;
 	}
+=======
+//void robotPositionCallback(const yeti_snowplow::robot_position::ConstPtr& robotPosition){
+	
+//}
+>>>>>>> 8bc267b25235170faf9f51138b12a3c463170d58
 
 	void obstacleReactance()
 	{
@@ -110,6 +122,7 @@ public:
 			rightspeed = 0;
 		}
 
+<<<<<<< HEAD
 		else if(rightAngle == 0 && leftAngle == 0)
 		{
 			//turn unchanged
@@ -149,6 +162,10 @@ public:
 		turnMsg.angle = turn;
 		turnMsg.stop = movingObstacleDetected;
 		turnPub.publish(turnMsg);
+=======
+	ros::Subscriber obstaclePositionsSub = n.subscribe("obstacles", 1000, obstaclePositionsCallback);
+//    ros::Subscriber robotPositionSub = n.subscribe("robot_position", 1000, robotPositionCallback);
+>>>>>>> 8bc267b25235170faf9f51138b12a3c463170d58
 
 	}
 private:
