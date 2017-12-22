@@ -176,9 +176,9 @@ target_link_libraries(obstacle_detection ${catkin_LIBRARIES})
 #add_dependencies(obstacle_reaction ${PROJECT_NAME}_generate_messages_cpp)
 #target_link_libraries(obstacle_reaction ${catkin_LIBRARIES})
 
-add_executable(gpio_monitor src/gpio_monitor.cpp)
-add_dependencies(gpio_monitor ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(gpio_monitor ${catkin_LIBRARIES} ${wiringPi})
+#add_executable(gpio_monitor src/gpio_monitor.cpp)
+#add_dependencies(gpio_monitor ${PROJECT_NAME}_generate_messages_cpp)
+#target_link_libraries(gpio_monitor ${catkin_LIBRARIES} ${wiringPi})
 
 add_executable(yeti_waypoint_selection src/yeti_waypoint_selection.cpp)
 add_dependencies(yeti_waypoint_selection ${PROJECT_NAME}_generate_messages_cpp)
