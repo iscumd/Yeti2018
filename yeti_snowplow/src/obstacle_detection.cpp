@@ -4,7 +4,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud.h>
 #include <laser_geometry/laser_geometry.h>
-#include <yeti_snowplow/robot_position.h>
+//#include <yeti_snowplow/robot_position.h>
 #include <yeti_snowplow/obstacle.h>
 #include <yeti_snowplow/obstacles.h>
   
@@ -186,14 +186,14 @@ void findObstacles()
 
     return;
 }
-void localizationCallback(const yeti_snowplow::robot_position::ConstPtr& position) 
+//void localizationCallback(const yeti_snowplow::robot_position::ConstPtr& position) 
 
-{
+//{
     /* This fires every time a new robot position is published */
     //Not used for now
 
-    return;
-}
+//    return;
+//}
 
 void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scannedData)
 {
@@ -219,7 +219,7 @@ int main(int argc, char **argv){
 
 	ros::NodeHandle n;
 
-    ros::Subscriber localizationSub = n.subscribe("robot_location", 1, localizationCallback);
+//    ros::Subscriber localizationSub = n.subscribe("robot_location", 1, localizationCallback);
 
     ros::Subscriber scanSub = n.subscribe("scan", 1, scanCallback);
 

@@ -1,7 +1,7 @@
 #include "ros/ros.h"
+#include "geometry_msgs/Pose2D.h"
 #include "geometry_msgs/Twist.h"
 #include "yeti_snowplow/location_point.h"
-#include "yeti_snowplow/robot_position.h"
 #include "yeti_snowplow/target.h"
 #include "yeti_snowplow/waypoint.h"
 
@@ -66,10 +66,10 @@ void initPID(){
 	cvar.pErr = cvar.iErr = cvar.dErr = 0;
 }
 
-void localizationCallback(const yeti_snowplow::robot_position::ConstPtr& location){	
+void localizationCallback(const geometry_msgs::Pose2D::ConstPtr& location){	
 	/* This fires every time a new position is published */
 
-	double heading = location->heading;
+	double heading = location->theta;
 	int dir = (int)currentTarget.dir;
 	double dx, dy, s, c, dt;
 	double desiredAngle;
