@@ -24,6 +24,8 @@ bool switch1;
 yeti_snowplow::gpio_leds leds;
 bool led1;
 
+ros::Publisher gpioPub;
+
 void initPins() {
     pinMode(ESTOP, INPUT);
     pinMode(BUTTON1, INPUT);
@@ -60,11 +62,10 @@ int main(int argc, char **argv) {
 
     initPins();
     updateLeds();
+    ros::Subscriber gpioSub = n.subscribe("gpio/leds", 5, ledCallback);
     updateInputs();
 
-    ros::Subscriber gpioSub = n.subscribe("gpio/leds", 5, ledCallback);
-    ros::Publisher gpioPub = n.advertise<yeti_snowplow::gpio_inputs>("gpio/inputs", 5);
-    gpioPub.publish(inputs);
+    gpioPub = n.advertise<yeti_snowplow::gpio_inputs>("gpio/inputs", 5);
 
     ros::spin();
     return 0;
