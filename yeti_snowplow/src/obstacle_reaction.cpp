@@ -46,7 +46,7 @@ public:
 
 	void getNextWaypoint()
 	{
-		yeti::target wayPointInfo;
+		yeti_snowplow::target wayPointInfo;
 		wayPointInfo.request.ID = wayPointID; 
 		
 
@@ -168,7 +168,7 @@ private:
 	double leftAngle;
 	double leftSpeed;
 	double rightSpeed;
-	location_point nextWayPoint;
+	yeti_snowplow::location_point nextWayPoint;
 	double navSpeed;
 	double speed;
 	double turn;
