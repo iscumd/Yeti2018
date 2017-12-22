@@ -16,9 +16,6 @@
 
 #define LED1 14 // meant for drive mode, can change name later
 
-ros::Publisher gpioPub;
-ros::Subscriber gpioSub;
-
 yeti_snowplow::gpio_inputs inputs;
 bool estop;
 bool button1;
@@ -59,14 +56,14 @@ void ledCallback(const yeti_snowplow::gpio_leds::ConstPtr& leds) {
 int main(int argc, char **argv) {
     ros::init(argc, argv, "gpio_monitor");
     ros::NodeHandle n;
-    wiringPiSetup(); // Enables WiringPi for GPIO control
+    wiringPiSetupGpio(); // Enables WiringPi for GPIO control
 
     initPins();
     updateLeds();
     updateInputs();
 
-    gpioSub = n.subscribe("gpio/leds", 5, ledCallback);
-    gpioPub = n.advertise<yeti_snowplow::gpio_inputs>("gpio/inputs", 5);
+    ros::Subscriber gpioSub = n.subscribe("gpio/leds", 5, ledCallback);
+    ros::Publisher gpioPub = n.advertise<yeti_snowplow::gpio_inputs>("gpio/inputs", 5);
     gpioPub.publish(inputs);
 
     ros::spin();
