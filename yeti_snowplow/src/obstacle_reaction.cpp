@@ -1,4 +1,4 @@
-#include "ros/ros.h"
+#include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Pose2D.h>
 #include <sensor_msgs/PointCloud.h>
@@ -8,7 +8,7 @@
 #include <yeti_snowplow/lidar_point.h>
 #include <yeti_snowplow/turn.h>
 #include <yeti_snowplow/target.h>
-#include <buffer.h>
+#include "buffer.h"
 #include <math.h>
 #include <vector>
 #include <algorithm>

@@ -1,7 +1,9 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "ros/ros.h"
+#include <ros/ros.h>
+#include <math.h>
+#include <vector>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Pose2D.h>
 #include <sensor_msgs/PointCloud.h>
@@ -12,10 +14,11 @@
 #include <yeti_snowplow/lidar_point.h>
 #include <yeti_snowplow/turn.h>
 #include <yeti_snowplow/target.h>
-#include <math.h>
-#include <vector>
+
 
 #define M_PI           3.14159265358979323846  /* pi */
+
+using namespace std;
 
 class Buffer
 {
@@ -34,7 +37,7 @@ private:
     const double SAMPLING_ANGLE = M_PI /ANGLE_SAMPLES;// figures out the angle between each sample angle
 public:
     const double DOOM = (-135.0) * 2.0 * Math.PI / 360.0;//this is bad....
-    vector<location_point> combinedBufPoints;//stores the list of LiDAR points which are within the buffer of the robot.
+    std::vector<yeti_snowplow::location_point> combinedBufPoints;//stores the list of LiDAR points which are within the buffer of the robot.
     
     double adjust_angle(double angle, double circle)//this function limits the angle between (-pi & pi) or (-180 & 180)
     {   //circle = 2pi for radians, 360 for degrees
@@ -192,5 +195,4 @@ public:
         }
     }
 };
-
 #endif
