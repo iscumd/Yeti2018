@@ -47,14 +47,14 @@ public:
         return angle;
     }
     
-    double distance(location_point point1, location_point point2)
+    double distance(yeti_snowplow::location_point point1, yeti_snowplow::location_point point2)
     {
         return sqrt(pow((point2.x - point1.x), 2)- pow((point2.y - point1.y), 2));
     }
     //this function checks a turn angle (provided by wheel scans) to see if there is anything in the way of the desired turn angle.
     //It returns true if the robot can turn that direction without hittinemmg an obstacle, and returns false if there is something in
     //the way of the entered turn angle.
-    bool combinedVectorScan(location_point source, location_point destination)
+    bool combinedVectorScan(yeti_snowplow::location_point source, yeti_snowplow::location_point destination)
     {
         double target_angle = adjust_angle(Math.atan(destination.X - source.X, destination.Y - source.Y), 2.0* M_PI  ); //limit angle between (-pi & pi) or (-180 & 180)
         double target_dist = distanceCalculator(destination, source); //find distance between corner of wheel to desired target. this equals Buffer length
@@ -109,7 +109,7 @@ public:
         return (combinedVectorScan(leftWheel, target) && combinedVectorScan(rightWheel, target));
     }
 
-    double combinedRightWheelScan(lidar_point target)
+    double combinedRightWheelScan(yeti_snowplow::lidar_point target)
     {
         location_point source;
         double targetAngle = adjust_angle(atan2(target.x, target.y), 2.0*M_PI);
@@ -142,7 +142,7 @@ public:
         return DOOM;
     }
 
-    double combinedLeftWheelScan(lidar_point target)
+    double combinedLeftWheelScan(yeti_snowplow::lidar_point target)
     {
         location_point source;
         double targetAngle = adjust_angle(atan2(target.x, target.y), 2.0*M_PI);
