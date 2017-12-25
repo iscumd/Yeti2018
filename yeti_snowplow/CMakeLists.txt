@@ -168,10 +168,6 @@ add_executable(navigation_pid src/navigation_pid.cpp)
 add_dependencies(navigation_pid ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(navigation_pid ${catkin_LIBRARIES})
 
-add_executable(obstacle_detection src/obstacle_detection.cpp)
-add_dependencies(obstacle_detection ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(obstacle_detection ${catkin_LIBRARIES})
-
 add_executable(obstacle_reaction src/obstacle_reaction.cpp src/buffer.h)
 add_dependencies(obstacle_reaction ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(obstacle_reaction ${catkin_LIBRARIES})
