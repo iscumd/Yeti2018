@@ -9,7 +9,6 @@
 #include <sensor_msgs/PointCloud.h>
 #include <yeti_snowplow/obstacles.h>
 #include <yeti_snowplow/obstacle.h>
-#include <yeti_snowplow/robot_position.h>
 #include <yeti_snowplow/location_point.h>
 #include <yeti_snowplow/lidar_point.h>
 #include <yeti_snowplow/turn.h>
@@ -28,7 +27,7 @@ private:
     //Also defines the required distance away any obstacle must be for the robot to consider turning toward that direction
 
     const double combinedHalfRobotWidth = 0.35; //350.0;// this is the width of the robot/2. Should algin with the outsides of the wheel.
-    const int badCount = 0;// temporary counter to hold the number of LiDAR points in the way of a turn angle. used in CombinedVectorSCan
+    int badCount = 0;// temporary counter to hold the number of LiDAR points in the way of a turn angle. used in CombinedVectorSCan
 
     //Sampling Thresholds
     const double SAMPLING_DISTANCE = 0.1; //100.0;
@@ -36,12 +35,12 @@ private:
     const double ANGLE_SAMPLES = 18;// the number of angles to try to avoid an obstacle
     const double SAMPLING_ANGLE = M_PI /ANGLE_SAMPLES;// figures out the angle between each sample angle
 public:
-    const double DOOM = (-135.0) * 2.0 * Math.PI / 360.0;//this is bad....
+    const double DOOM = (-135.0) * 2.0 * M_PI / 360.0;//this is bad....
     std::vector<yeti_snowplow::location_point> combinedBufPoints;//stores the list of LiDAR points which are within the buffer of the robot.
     
     double adjust_angle(double angle, double circle)//this function limits the angle between (-pi & pi) or (-180 & 180)
     {   //circle = 2pi for radians, 360 for degrees
-        Subtract multiples of circle
+        //Subtract multiples of circle
         angle -= floor(angle / circle) * circle;
         angle -= floor(2 * angle / circle) * circle;
         return angle;
@@ -56,26 +55,27 @@ public:
     //the way of the entered turn angle.
     bool combinedVectorScan(yeti_snowplow::location_point source, yeti_snowplow::location_point destination)
     {
-        double target_angle = adjust_angle(Math.atan(destination.X - source.X, destination.Y - source.Y), 2.0* M_PI  ); //limit angle between (-pi & pi) or (-180 & 180)
-        double target_dist = distanceCalculator(destination, source); //find distance between corner of wheel to desired target. this equals Buffer length
+        double target_angle = adjust_angle(atan2(destination.x - source.x, destination.y - source.y), 2.0* M_PI  ); //limit angle between (-pi & pi) or (-180 & 180)
+        double target_dist = distance(destination, source); //find distance between corner of wheel to desired target. this equals Buffer length
         double dist;
-        int i = 0, j = 0;//set up two iterators
+        int i = 0;
+        int j = 0;//set up two iterators
         double tempDist = 0.0;
 
-        location_point sample_point;// create temporary point which is updated each iteration
+        yeti_snowplow::location_point sample_point;// create temporary point which is updated each iteration
            
         do// find out if there is anything in the way of the 
         {
-            sample_point.X = (i * SAMPLING_DISTANCE) * sin(target_angle);//create temporary XY point along the desired target angle at varying distances
-            sample_point.Y = (i * SAMPLING_DISTANCE) * cos(target_angle);//create temporary XY point along the desired target angle at varying distances
+            sample_point.x = (i * SAMPLING_DISTANCE) * sin(target_angle);//create temporary XY point along the desired target angle at varying distances
+            sample_point.y = (i * SAMPLING_DISTANCE) * cos(target_angle);//create temporary XY point along the desired target angle at varying distances
 
-            foreach (auto cpoint in combinedBufPoints)//look through each point point in the buffer LiDAR points to see if any are by the temporary point
+            for(yeti_snowplow::location_point cpoint : combinedBufPoints)//look through each point point in the buffer LiDAR points to see if any are by the temporary point
             {
-                if (cpoint.Y < 0) //if it's behind the robot, skip it
+                if (cpoint.y < 0) //if it's behind the robot, skip it
                 {
                     continue;
                 }
-                dist = distanceCalculator(sample_point, cpoint); //figure out distance between the temporary point and this point in the buffer LiDAR points
+                dist = distance(sample_point, cpoint); //figure out distance between the temporary point and this point in the buffer LiDAR points
                 if (dist < combinedBufferWidth) // if the dcurrent LiDAR point is close to the temporary point
                 {
                     badCount++;//increment the number of LiDAR points in the way of this target angle
@@ -93,9 +93,9 @@ public:
 
     bool combinedCheckAngle(double targetAngle)
     {
-        location_point leftWheel;
-        location_point rightWheel;
-        location_point target;
+        yeti_snowplow::location_point leftWheel;
+        yeti_snowplow::location_point rightWheel;
+        yeti_snowplow::location_point target;
 
         leftWheel.y = 0;
         rightWheel.y = 0;
@@ -109,9 +109,9 @@ public:
         return (combinedVectorScan(leftWheel, target) && combinedVectorScan(rightWheel, target));
     }
 
-    double combinedRightWheelScan(yeti_snowplow::lidar_point target)
+    double combinedRightWheelScan(yeti_snowplow::location_point target)
     {
-        location_point source;
+        yeti_snowplow::location_point source;
         double targetAngle = adjust_angle(atan2(target.x, target.y), 2.0*M_PI);
 
         double samplePhi;
@@ -121,19 +121,19 @@ public:
         source.y = 0;
 
         do{
-            location_point samplePoint;
+            yeti_snowplow::location_point samplePoint;
             samplePoint.x = combinedBufferLength * sin(targetAngle - SAMPLING_ANGLE * index);
-            samplePoint.y = combinedBufferLength * cos(targetAngle - SAMPLING_ANGLE * index)
+            samplePoint.y = combinedBufferLength * cos(targetAngle - SAMPLING_ANGLE * index);
             samplePhi = adjust_angle(atan2(samplePoint.x, samplePoint.y), 2.0 * M_PI);
 
             if(combinedVectorScan(source, samplePoint))
             {
                 if(combinedCheckAngle(samplePhi))
                 {
-                    if(i == 0)
+                    if(index == 0)
                         return 0;
                     
-                    return sample_phi;
+                    return samplePhi;
                 }
             }
             index++;
@@ -142,9 +142,9 @@ public:
         return DOOM;
     }
 
-    double combinedLeftWheelScan(yeti_snowplow::lidar_point target)
+    double combinedLeftWheelScan(yeti_snowplow::location_point target)
     {
-        location_point source;
+        yeti_snowplow::location_point source;
         double targetAngle = adjust_angle(atan2(target.x, target.y), 2.0*M_PI);
 
         double samplePhi;
@@ -154,19 +154,19 @@ public:
         source.y = 0.0;
 
         do{
-            location_point samplePoint;
+            yeti_snowplow::location_point samplePoint;
             samplePoint.x = combinedBufferLength * sin(targetAngle + SAMPLING_ANGLE * index);
-            samplePoint.y = combinedBufferLength * cos(targetAngle + SAMPLING_ANGLE * index)
+            samplePoint.y = combinedBufferLength * cos(targetAngle + SAMPLING_ANGLE * index);
             samplePhi = adjust_angle(atan2(samplePoint.x, samplePoint.y), 2.0 * M_PI);
 
             if(combinedVectorScan(source, samplePoint))
             {
                 if(combinedCheckAngle(samplePhi))
                 {
-                    if(i == 0)
+                    if(index == 0)
                         return 0;
                     
-                    return sample_phi;
+                    return samplePhi;
                 }
             }
             index++;
@@ -175,18 +175,18 @@ public:
         return DOOM;
     }
 
-    vector<obstacle> combinedUpdatePoints(const vector<geometry_msgs::Point32> lidarPoints);
+    vector<yeti_snowplow::obstacle> combinedUpdatePoints(const vector<geometry_msgs::Point32> lidarPoints)
     {
         combinedBufPoints.clear();
         badCount = 0; 
 
-        foreach(auto lidarPoint : lidarPoints)
+        for(geometry_msgs::Point32 lidarPoint : lidarPoints)
         {
             if(sqrt(pow(lidarPoint.x, 2) + pow(lidarPoint.y, 2)) < combinedBufferLength)
             {
-                if(idarPoint.y > 0)
+                if(lidarPoint.y > 0)
                 {
-                    geometry::Point32 locationPoint;
+                    yeti_snowplow::location_point locationPoint;
                     locationPoint.x = lidarPoint.x;
                     locationPoint.y = lidarPoint.y;
                     combinedBufPoints.push_back(locationPoint);
