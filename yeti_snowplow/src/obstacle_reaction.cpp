@@ -30,10 +30,10 @@ public:
 
 		//turnPub = n.advertise<yeti_snowplow::turn>("obstacle_reaction_turn", 1000);
 		//obstaclePositionsSub = n.subscribe("obstacles", 1000, obstaclePositionsCallback);
-		robotPositionSub = n.subscribe("robot_position", 1000, &ObstacleReaction::robotPositionCallback, this);
+		robotPositionSub = n.subscribe("/localization/robot_location", 1000, &ObstacleReaction::robotPositionCallback, this);
 		waypointClient = n.serviceClient<yeti_snowplow::waypoint>("waypoint");
-		scanSub = n.subscribe("obstacles", 1000, &ObstacleReaction::scanCallback,this);
-		velocityPub  = n.advertise<geometry_msgs::Twist>("obstacle_reactance/velocity", 1000);
+		scanSub = n.subscribe("/obstacle_detection/obstacles", 1000, &ObstacleReaction::scanCallback,this);
+		velocityPub  = n.advertise<geometry_msgs::Twist>("/obstacle_reactance/velocity", 1000);
 		
 		n.param("maximum_navigation_speed", maxSpeed, 0.7);
 		n.param("obstacle_turn_boost", turnBoost, -1.2);
