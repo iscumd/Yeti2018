@@ -74,6 +74,7 @@ public:
 		//location contains an array of points, which contains an x and a y relative to the robot
 	
 		//Projecting LaserScanData to PointCloudData
+		newLidarDataRecieved = true;
 		laser_geometry::LaserProjection projector_;
 		sensor_msgs::PointCloud cloudData;
 		projector_.projectLaser(*scannedData, cloudData);
@@ -86,7 +87,7 @@ public:
 		geometry_msgs::Twist msg;
 		yeti_snowplow::turn turnMsg;
 		getNextWaypoint();
-		buffer.combinedUpdatePoints(lidarData);
+		obstacles = buffer.combinedUpdatePoints(lidarData);
 		//Creates List of LiDAR points which have a positive Y value, and are within the Buffer distance threshold
 		
 		//look at angle needed to go to target waypoint, if there is an obstacle in the way, then find what turn angle is needed to avoid it to the right. 
@@ -149,6 +150,7 @@ public:
 		msg.linear.x = speed;
 		msg.angular.z = turn;
 		velocityPub.publish(msg);
+		newLidarDataRecieved = false;
 		// turnMsg.angle = turn;
 		// turnMsg.stop = movingObstacleDetected;
 		// turnPub.publish(turnMsg);
@@ -178,6 +180,7 @@ private:
 	double maxSpeed;
 	double reverseSpeed;
 	bool movingObstacleDetected;
+	bool newLidarDataRecieved;
 	int dir;
 	int wayPointID;
 };
@@ -187,10 +190,10 @@ int main(int argc, char **argv){
 
 	ObstacleReaction obstacleReaction;
 	
-	while(ros::ok())
+	while(ros::ok() && newLidarDataRecieved)
 	{
-		ros::spin();
 		obstacleReaction.obstacleReactance();
+		ros::spinOnce();
 	}
 	
 	
