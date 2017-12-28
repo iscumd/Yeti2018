@@ -225,7 +225,7 @@ int main(int argc, char **argv){
 
     ros::Publisher obstaclePub;//ROS obstacle publisher
 
-    obstaclePub = n.advertise<yeti_snowplow::obstacles>("obstacles", 100);
+    obstaclePub = n.advertise<yeti_snowplow::obstacles>("/obstacle_detection/obstacles", 100);
 
     while(ros::ok())
     {

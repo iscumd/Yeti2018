@@ -32,7 +32,7 @@ public:
 		//obstaclePositionsSub = n.subscribe("obstacles", 1000, obstaclePositionsCallback);
 		robotPositionSub = n.subscribe("/localization/robot_location", 1000, &ObstacleReaction::robotPositionCallback, this);
 		waypointClient = n.serviceClient<yeti_snowplow::waypoint>("waypoint");
-		scanSub = n.subscribe("/obstacle_detection/obstacles", 1000, &ObstacleReaction::scanCallback,this);
+		scanSub = n.subscribe("scan", 1000, &ObstacleReaction::scanCallback,this);
 		velocityPub  = n.advertise<geometry_msgs::Twist>("/obstacle_reactance/velocity", 1000);
 		
 		n.param("maximum_navigation_speed", maxSpeed, 0.7);
@@ -190,10 +190,13 @@ int main(int argc, char **argv){
 
 	ObstacleReaction obstacleReaction;
 	
-	while(ros::ok() && newLidarDataRecieved)
+	while(ros::ok())
 	{
+		if(newLidarDataRecieved)
+		{
 		obstacleReaction.obstacleReactance();
 		ros::spinOnce();
+		}
 	}
 	
 	
