@@ -113,7 +113,6 @@ public:
 			leftSpeed = 0;
 			rightSpeed = 0;
 		}
-
 		else if(rightAngle == 0 && leftAngle == 0)
 		{
 			//turn unchanged
