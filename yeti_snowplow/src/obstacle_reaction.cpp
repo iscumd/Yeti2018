@@ -155,6 +155,10 @@ public:
 		// turnMsg.stop = movingObstacleDetected;
 		// turnPub.publish(turnMsg);
 	}
+	bool newData()
+	{
+		return newLidarDataRecieved;
+	}
 private:
 //ROS Variables
 	ros::NodeHandle n;
@@ -186,13 +190,13 @@ private:
 };
 
 int main(int argc, char **argv){
-	ros::init(argc, argv, "obstacle_reaction");
+	ros::init(argc, argv, "obstacle_reaction_node");
 
 	ObstacleReaction obstacleReaction;
 	
 	while(ros::ok())
 	{
-		if(newLidarDataRecieved)
+		if(obstacleReaction.newData())
 		{
 		obstacleReaction.obstacleReactance();
 		ros::spinOnce();
