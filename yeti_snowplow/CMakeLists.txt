@@ -164,9 +164,13 @@ add_executable(yeti_drive_mode_control src/yeti_drive_mode_control.cpp)
 add_dependencies(yeti_drive_mode_control ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(yeti_drive_mode_control ${catkin_LIBRARIES})
 
-add_executable(navigation_pid src/navigation_pid.cpp)
-add_dependencies(navigation_pid ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(navigation_pid ${catkin_LIBRARIES})
+#add_executable(navigation_pid src/navigation_pid.cpp)
+#add_dependencies(navigation_pid ${PROJECT_NAME}_generate_messages_cpp)
+#target_link_libraries(navigation_pid ${catkin_LIBRARIES})
+
+add_executable(navigation_pid_velocity src/navigation_pid_velocity.cpp)
+add_dependencies(navigation_pid_velocity ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(navigation_pid_velocity ${catkin_LIBRARIES})
 
 add_executable(obstacle_detection src/obstacle_detection.cpp)
 add_dependencies(obstacle_detection ${PROJECT_NAME}_generate_messages_cpp)
