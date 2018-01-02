@@ -168,6 +168,10 @@ target_link_libraries(yeti_drive_mode_control ${catkin_LIBRARIES})
 #add_dependencies(navigation_pid ${PROJECT_NAME}_generate_messages_cpp)
 #target_link_libraries(navigation_pid ${catkin_LIBRARIES})
 
+add_executable(navigation_pid_speed src/navigation_pid_speed.cpp)
+add_dependencies(navigation_pid_speed ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(navigation_pid_speed ${catkin_LIBRARIES})
+
 add_executable(navigation_pid_turn src/navigation_pid_turn.cpp)
 add_dependencies(navigation_pid_turn ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(navigation_pid_turn ${catkin_LIBRARIES})

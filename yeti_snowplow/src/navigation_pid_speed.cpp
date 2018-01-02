@@ -13,28 +13,32 @@
 #include <vector>
 using namespace std;
 
-double targdist;
-double targbearing;
-double front;
-double right;
+//PID CONTROL
+//u(t) = Kp * e(t) + Ki * Integral of e(t) + Kd * derivative of e(t)
 double speed;               // between -1 to 1
-double turn;                // between -1 to 1
-double pErr;
-double lastpErr;
-double kP;
-double dErr;
-double kD;
-double iErr;
-double kI;
-double lookAhead;
+//Proportional
+//P accounts for present values of the error. For example, if the error is large 
+//and positive, the control output will also be large and positive.
+double kP; // Proportional Term of PID
+double pErr; // Current proportional Error
+double lastpErr; //Last proportional Error
+//DERIVATIVE
+//D accounts for possible future trends of the error, based on its current rate of change.
+double kD; //Derivative Term of PID
+double dErr; // calculated Derrivative Error
+//INTEGRAL
+//I accounts for past values of the error.For example, if the current 
+//output is not sufficiently strong, the integral of the error will 
+//accumulate over time, and the controller will respond by applying a stronger action.
+double kI; // Integral Term
+double iErr; //
 
 ros::Publisher pub;
-// ros::ServiceClient waypointClient;
-geometry_msgs::Twist previousVelocity;
-geometry_msgs::Twist currentVelocity;
+// geometry_msgs::Twist previousTargetVelocity;
+geometry_msgs::Twist currentTargetVelocity;
+geometry_msgs::Twist realVelocity;
 double lastTime, thisTime;
-double maxIntErr = 0.5;
-// double destinationThresh = 0.5;
+double maxIntErr = 0.5; //TODO: ros param
 
 double mathSign(double number){
 	//Returns the number's sign
@@ -45,8 +49,11 @@ double mathSign(double number){
 	if (number == 0){
 		return 0;
 	}
+	else if (number > 0) {
+		return 1;
+	}
 	else {
-		return number / abs(number);
+		return -1;
 	}
 }
 
@@ -66,78 +73,45 @@ void initPID(){
 
 void obstacleReactanceVelocityCallback(const geometry_msgs::Twist::ConstPtr& velocity){	
 	/* This fires every time a new velocity is published */
-	if(velocity->linear.x != currentVelocity.linear.x || velocity->angular.z != currentVelocity.angular.z){
-		previousVelocity = currentVelocity;
-		currentVelocity = *velocity;
+	if(velocity->linear.x != currentTargetVelocity.linear.x || velocity->angular.z != currentTargetVelocity.angular.z){
+		//previousTargetVelocity = currentTargetVelocity;
+		currentTargetVelocity = *velocity;
 		initPID();
 	}
 }
 
+void localizationVelocityCallback(const geometry_msgs::Twist::ConstPtr& velocity){
+	realVelocity = *velocity;
+}
+
 void pid(){
-	double heading = location->theta;
-	int dir = (int)currentTarget.dir;
-	double dx, dy, s, c, dt;
-	double desiredAngle;
-
-	if (dir < 0){
-		heading = heading - M_PI * mathSign(heading);
-	}
-
-	dx = currentTarget.location.x - location->x;
-	dy = currentTarget.location.y - location->y;
-	
-	//FIND DISTANCE AND ANGLE TO DESTINATION
-	cvar.targdist = sqrt(dx * dx + dy * dy);//current distance from the robot to the target
-	// desired angle is the desired Heading the robot should have at this instance if it were to be facing the target.
-	desiredAngle = adjust_angle(atan2(dx, dy), 2.0*M_PI);
-
-	//USED FOR WAYPOINT NAVIGATION
-	// cvar.right = dx * c - dy * s;
-	// cvar.front = dy * c + dx * s;
-	// c = cos(heading); //find Cosine term of the robots heading
-	// s = sin(heading); //find sine term of the robots heading
-
-	speed = currentTarget.speed;
+	double dt; //Delta time. Holds the difference in time from the last time this function was called to this time.
 
 	thisTime = ((double)clock()) / CLOCKS_PER_SEC;
 	dt = thisTime - lastTime;
 
-	lastpErr = pErr;
-	pErr = adjust_angle(heading - desiredAngle, 2.0 * M_PI);
-	iErr = iErr + pErr * dt;
-	iErr = mathSign(iErr) * fmin(abs(iErr), maxIntErr);
+	/* Current Target Speed PID Calculations */
+	lastpErr = pErr; //save the last proportional error
+	pErr = realVelocity.linear.x - currentTargetVelocity.linear.x; //calculate the current propotional error between our current speed and the target speed //adjust_angle(heading - desiredAngle, 2.0 * M_PI); 
+	iErr = iErr + pErr * dt; //increase the cumulated error.
+	iErr = mathSign(iErr) * fmin(abs(iErr), maxIntErr); //limit the maxmium integral error
 
-	if (dt != 0){
-		dErr = (pErr - lastpErr) / dt;
+	if (dt != 0){ //if the time has changed since the last iteration of guide. (cannot divide by 0).
+		dErr = (pErr - lastpErr) / dt; // calculate the derrivative error
 	}
-	if (cos(pErr) > 0.5){ // +-60 degrees
-		kP = 0.5;
-		turn = -(kP * sin(pErr) *2 + kI * iErr + kD * dErr);  // Nattu
-	}
-	else {
-		turn = -0.5 * mathSign(pErr); //if you need to turnin place, then ignore PID
-	}
+	
+	kP = 0.5;
+	// turn = -(kP * sin(pErr) *2 + kI * iErr + kD * dErr);  //Nattu; calulate how much the robot should turn at this instant.
+	speed = -(kP * pErr + kI * iErr + kD * dErr);
 	lastTime = thisTime;
 
-	geometry_msgs::Twist msg;
-	msg.linear.x = speed;
-	msg.angular.z = turn;
-	navigationVelocityPub.publish(msg);
+	std_msgs::Float64 msg;
+	msg.data = speed;
+	pub.publish(msg);
 
-	if (targdist < destinationThresh){ //reached target
-		initPID();
-
-		previousTarget = currentTarget;
-
-		yeti_snowplow::waypoint waypointReq;
-		waypointReq.request.ID = previousTarget.location.id + 1;
-		if (waypointClient.call(waypointReq)){
-			currentTarget = waypointReq.response.waypoint;
-		}
-		else { //we've hit the last waypoint or the service is no longer available
-			//TODO
-		}
-	}
+	// if (targdist < destinationThresh){ //reached target
+	// 	initPID();
+	// }
 }
 
 int main(int argc, char **argv){
@@ -149,7 +123,8 @@ int main(int argc, char **argv){
 
 	initPID();
 
-	ros::Subscriber velocitySub = n.subscribe("/obstacle_reactance/velocity", 5, obstacleReactanceVelocityCallback);
+	ros::Subscriber reactanceVelocitySub = n.subscribe("/obstacle_reactance/velocity", 5, obstacleReactanceVelocityCallback);
+	ros::Subscriber localizationVelocitySub = n.subscribe("/localization/velocity", 5, localizationVelocityCallback);
 
 	// ros::spin();
 	ros::Rate loopRate(100); //Hz

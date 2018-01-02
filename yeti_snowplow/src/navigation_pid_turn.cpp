@@ -13,27 +13,32 @@
 #include <vector>
 using namespace std;
 
-// double targdist;
-// double targbearing;
-// double front;
-// double right;
-// double speed;               // between -1 to 1
-double turn;                // between -1 to 1
-double pErr;
-double lastpErr;
-double kP;
-double dErr;
-double kD;
-double iErr;
-double kI;
-// double lookAhead;
+//PID CONTROL
+//u(t) = Kp * e(t) + Ki * Integral of e(t) + Kd * derivative of e(t)
+double turn;               // between -1 to 1
+//Proportional
+//P accounts for present values of the error. For example, if the error is large 
+//and positive, the control output will also be large and positive.
+double kP; // Proportional Term of PID
+double pErr; // Current proportional Error
+double lastpErr; //Last proportional Error
+//DERIVATIVE
+//D accounts for possible future trends of the error, based on its current rate of change.
+double kD; //Derivative Term of PID
+double dErr; // calculated Derrivative Error
+//INTEGRAL
+//I accounts for past values of the error.For example, if the current 
+//output is not sufficiently strong, the integral of the error will 
+//accumulate over time, and the controller will respond by applying a stronger action.
+double kI; // Integral Term
+double iErr; //
 
 ros::Publisher pub;
-geometry_msgs::Twist previousTargetVelocity;
+// geometry_msgs::Twist previousTargetVelocity;
 geometry_msgs::Twist currentTargetVelocity;
 geometry_msgs::Twist realVelocity;
 double lastTime, thisTime;
-double maxIntErr = 0.5;
+double maxIntErr = 0.5; //TODO: ros param
 
 double mathSign(double number){
 	//Returns the number's sign
@@ -69,7 +74,7 @@ void initPID(){
 void obstacleReactanceVelocityCallback(const geometry_msgs::Twist::ConstPtr& velocity){	
 	/* This fires every time a new velocity is published */
 	if(velocity->linear.x != currentTargetVelocity.linear.x || velocity->angular.z != currentTargetVelocity.angular.z){
-		previousTargetVelocity = currentTargetVelocity;
+		// previousTargetVelocity = currentTargetVelocity;
 		currentTargetVelocity = *velocity;
 		initPID();
 	}
@@ -81,44 +86,36 @@ void localizationVelocityCallback(const geometry_msgs::Twist::ConstPtr& velocity
 
 void pid(){
 	double heading = realVelocity.angular.z;//location->theta;
-	int dir = mathSign(realVelocity.linear.x);//(int)currentTarget.dir;
-	double dx, dy, s, c, dt;
-	double desiredAngle;
+	int dir = mathSign(currentTargetVelocity.linear.x);//(int)currentTarget.dir;
+	double dt; //Delta time. Holds the difference in time from the last time this function was called to this time.
+	double desiredAngle; // the desired heading. The heading which would cause the robot to directly face the target
 
-	if (dir < 0){
+	if (dir < 0){ //if direction says we should go backward, turn heading around
 		heading = heading - M_PI * mathSign(heading);
 	}
-
-	// dx = currentTarget.location.x - location->x;
-	// dy = currentTarget.location.y - location->y;
-	
-	//FIND DISTANCE AND ANGLE TO DESTINATION
+	//FIND ANGLE TO DESTINATION
 	// desired angle is the desired Heading the robot should have at this instance if it were to be facing the target.
 	desiredAngle = adjust_angle(currentTargetVelocity.angular.z/*atan2(dx, dy)*/, 2.0*M_PI);
-
-	//USED FOR WAYPOINT NAVIGATION
-	// cvar.right = dx * c - dy * s;
-	// cvar.front = dy * c + dx * s;
-	// c = cos(heading); //find Cosine term of the robots heading
-	// s = sin(heading); //find sine term of the robots heading
 
 	thisTime = ((double)clock()) / CLOCKS_PER_SEC;
 	dt = thisTime - lastTime;
 
-	lastpErr = pErr;
-	pErr = adjust_angle(heading - desiredAngle, 2.0 * M_PI);
-	iErr = iErr + pErr * dt;
-	iErr = mathSign(iErr) * fmin(abs(iErr), maxIntErr);
+	/* Current Target Heading PID Calculations */
+	lastpErr = pErr; //save the last proportional error
+	pErr = adjust_angle(heading - desiredAngle, 2.0 * M_PI); //calculate the current propotional error between our current heading and the target heading
+	iErr = iErr + pErr * dt; //increase the cumulated error.
+	iErr = mathSign(iErr) * fmin(abs(iErr), maxIntErr); //limit the maxmium integral error
 
-	if (dt != 0){
-		dErr = (pErr - lastpErr) / dt;
+	if (dt != 0){ //if the time has changed since the last iteration of guide. (cannot divide by 0).
+		dErr = (pErr - lastpErr) / dt; // calculate the derrivative error
 	}
-	if (cos(pErr) > 0.5){ // +-60 degrees
+	if (cos(pErr) > 0.5){ //if the robot is not facing more than +-60 degrees away from the target
 		kP = 0.5;
-		turn = -(kP * sin(pErr) *2 + kI * iErr + kD * dErr);  // Nattu
+		//why is kI and kD not assigned? They'll be 0
+		turn = -(kP * sin(pErr) *2 + kI * iErr + kD * dErr);  //Nattu; calulate how much the robot should turn at this instant.
 	}
-	else {
-		turn = -0.5 * mathSign(pErr); //if you need to turnin place, then ignore PID
+	else { //if the robot is facing more than 60 degrees away from the target
+		turn = -0.5 * mathSign(pErr); //if you need to turn in place, then ignore PID temporarily
 	}
 	lastTime = thisTime;
 
