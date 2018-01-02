@@ -184,9 +184,9 @@ add_executable(obstacle_detection src/obstacle_detection.cpp)
 add_dependencies(obstacle_detection ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(obstacle_detection ${catkin_LIBRARIES})
 
-#add_executable(obstacle_reaction src/obstacle_reaction.cpp)
-#add_dependencies(obstacle_reaction ${PROJECT_NAME}_generate_messages_cpp)
-#target_link_libraries(obstacle_reaction ${catkin_LIBRARIES})
+add_executable(obstacle_reaction src/obstacle_reaction.cpp src/buffer.h)
+add_dependencies(obstacle_reaction ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(obstacle_reaction ${catkin_LIBRARIES})
 
 #add_executable(gpio_monitor src/gpio_monitor.cpp)
 #add_dependencies(gpio_monitor ${PROJECT_NAME}_generate_messages_cpp)
@@ -203,10 +203,6 @@ target_link_libraries(yeti_scan_to_xy ${catkin_LIBRARIES})
 add_executable(localization_node src/localization_node.cpp)
 add_dependencies(localization_node ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(localization_node ${catkin_LIBRARIES})
-
-add_executable(buffer src/buffer.cpp)
-add_dependencies(buffer ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(buffer ${catkin_LIBRARIES})
 
 #############
 ## Install ##
