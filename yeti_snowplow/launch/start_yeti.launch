@@ -25,7 +25,9 @@
 	<param name="navigationFile" value="$(find yeti_snowplow)/data/navigationDay1.txt" />
 	<node pkg="yeti_snowplow" type="yeti_waypoint_selection" name="yeti_waypoint_selection" output="screen" />
 	<!-- Navigation PID -->
-	<node pkg="yeti_snowplow" type="navigation_pid" name="navigation_pid" output="screen" />
+	<node pkg="yeti_snowplow" type="navigation_pid_speed" name="navigation_pid_speed" output="screen" />
+	<node pkg="yeti_snowplow" type="navigation_pid_turn" name="navigation_pid_turn" output="screen" />
+	<node pkg="yeti_snowplow" type="navigation_pid_velocity" name="navigation_pid_velocity" output="screen" />
 	<!-- Auto Control Logic -->
 	<param name="auto_control_logic_enable_logging" value="false" />
 	<node pkg="yeti_snowplow" type="auto_control_logic" name="auto_control_logic" output="screen" />
