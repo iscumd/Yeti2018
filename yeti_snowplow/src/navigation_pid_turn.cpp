@@ -2,6 +2,7 @@
 #include "geometry_msgs/Pose2D.h"
 #include "geometry_msgs/Twist.h"
 #include "std_msgs/Float64.h"
+#include "isc_shared/drive_mode.h"
 #include "yeti_snowplow/location_point.h"
 #include "yeti_snowplow/target.h"
 #include "yeti_snowplow/waypoint.h"
@@ -39,6 +40,7 @@ geometry_msgs::Twist currentTargetVelocity;
 geometry_msgs::Twist realVelocity;
 double lastTime, thisTime;
 double maxIntErr = 0.5; //TODO: ros param
+bool pidEnable = true;
 
 double mathSign(double number){
 	//Returns the number's sign
@@ -71,8 +73,19 @@ void initPID(){
 	pErr = iErr = dErr = 0;
 }
 
+void driveModeCallback(const isc_shared::drive_mode::ConstPtr& msg){
+	if(msg->mode == "auto"){
+		pidEnable = true;
+	}
+	else{
+		pidEnable = false;
+	}
+}
+
 void obstacleReactanceVelocityCallback(const geometry_msgs::Twist::ConstPtr& velocity){	
 	/* This fires every time a new velocity is published */
+	if(!pidEnable){return;}
+
 	if(velocity->linear.x != currentTargetVelocity.linear.x || velocity->angular.z != currentTargetVelocity.angular.z){
 		// previousTargetVelocity = currentTargetVelocity;
 		currentTargetVelocity = *velocity;
@@ -133,6 +146,8 @@ int main(int argc, char **argv){
 
 	initPID();
 
+	ros::Subscriber driveModeSub = n.subscribe("/yeti/drive_mode", 5, driveModeCallback);
+
 	ros::Subscriber reactanceVelocitySub = n.subscribe("/obstacle_reactance/velocity", 5, obstacleReactanceVelocityCallback);
 	ros::Subscriber localizationVelocitySub = n.subscribe("/localization/velocity", 5, localizationVelocityCallback);
 
@@ -140,7 +155,9 @@ int main(int argc, char **argv){
 	ros::Rate loopRate(100); //Hz
 	while(ros::ok()) {
 		ros::spinOnce();
-		pid();
+		if(pidEnable){
+			pid();
+		}
 		loopRate.sleep();
 	}
 	
