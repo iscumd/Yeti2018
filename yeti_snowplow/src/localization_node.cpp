@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/Twist.h>
 #include <sensor_msgs/PointCloud.h>
 #include <yeti_snowplow/obstacle.h>
 #include <yeti_snowplow/obstacles.h>
@@ -15,7 +16,8 @@
 
 using namespace std;
 
-ros::Publisher pub;//ROS publisher
+ros::Publisher pubLocation;//ROS publisher
+ros::Publisher pubVelocity;//ROS publisher
 
 sensor_msgs::PointCloud landmarkLocationsTxt;//holds landmark locations from text file
 bool needToCorrectLandmarks = true;
@@ -24,6 +26,7 @@ geometry_msgs::Pose2D previousRobotLocation;//holds previous robot location
 // static private LocationPoint previousRobotLocation = new LocationPoint();
 double landmarkTolerance = 0.0;
 bool enableLogging;
+geometry_msgs::Twist velocity;
 
 //find the landmark locations, with respect to where Yeti was. 
 // void scanLandmarks(sensor_msgs::PointCloud landmarkLocsTXT, sensor_msgs::PointCloud* scan_pt_cloud, geometry_msgs::Pose2D prev_robot_location)
@@ -264,6 +267,11 @@ geometry_msgs::Pose2D DetermineRobotLocation_old(vector<yeti_snowplow::obstacle>
 		//Console.WriteLine("x=%f\ty=%f\tt=%f\td=%02f\r", thisRobotLocation.x, thisRobotLocation.y, thisRobotLocation.theta, derr);
 	}
 
+	double dxLoc = thisRobotLocation.x - previousRobotLocation.x;
+	double dyLoc = thisRobotLocation.y - previousRobotLocation.y;
+	velocity.linear.x = sqrt(dxLoc * dxLoc + dyLoc * dyLoc);
+	velocity.angular.z = atan2(dxLoc, dyLoc);
+
 	previousRobotLocation.x = thisRobotLocation.x;
 	previousRobotLocation.y = thisRobotLocation.y;
 	previousRobotLocation.theta = thisRobotLocation.theta; 
@@ -367,7 +375,9 @@ void obstacleCallback(const yeti_snowplow::obstacles::ConstPtr& obstacles){
 	//determine robot location
 	//(vector<yeti_snowplow::obstacle> CLM, geometry_msgs::Pose2D robotLocation, double tolerance, float Lspeed, float Rspeed, float minSpeed)
 	geometry_msgs::Pose2D robotLocation = DetermineRobotLocation_old(correctedLandmarks, previousRobotLocation, landmarkTolerance, 0.0, 0.0, 0.0);
-	pub.publish(robotLocation);
+	pubLocation.publish(robotLocation);
+	
+	pubVelocity.publish(velocity);
 }
 
 main(int argc, char** argv){
@@ -392,11 +402,13 @@ main(int argc, char** argv){
 	// Create a ROS subscriber for the pointcloud published by laser geometry
  	// ros::Subscriber scanSub;
 	// scanSub = nh.subscribe("laser_scan_point_cloud", 1, localizeCallBack);
-	ros::Subscriber obstacleSub = nh.subscribe("obstacles", 1, obstacleCallback);
+	ros::Subscriber obstacleSub = nh.subscribe("/obstacle_detection/obstacles", 1, obstacleCallback);
 
  	// Create a ROS publisher for the output point cloud
 	//  pub = nh.advertise<sensor_msgs::PointCloud>("robot_location", 1);
-	pub = nh.advertise<geometry_msgs::Pose2D>("yeti/robot_location", 1);
+	pubLocation = nh.advertise<geometry_msgs::Pose2D>("/localization/robot_location", 1);
+
+	pubVelocity = nh.advertise<geometry_msgs::Twist>("/localization/velocity", 1);
 
 	ros::spin();
 	return 0;

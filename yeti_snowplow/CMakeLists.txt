@@ -196,9 +196,9 @@ add_executable(yeti_waypoint_selection src/yeti_waypoint_selection.cpp)
 add_dependencies(yeti_waypoint_selection ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(yeti_waypoint_selection ${catkin_LIBRARIES})
 
-add_executable(yeti_scan_to_xy src/yeti_scan_to_xy_node.cpp)
-add_dependencies(yeti_scan_to_xy ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(yeti_scan_to_xy ${catkin_LIBRARIES})
+#add_executable(yeti_scan_to_xy src/yeti_scan_to_xy_node.cpp)
+#add_dependencies(yeti_scan_to_xy ${PROJECT_NAME}_generate_messages_cpp)
+#target_link_libraries(yeti_scan_to_xy ${catkin_LIBRARIES})
 
 add_executable(localization_node src/localization_node.cpp)
 add_dependencies(localization_node ${PROJECT_NAME}_generate_messages_cpp)
