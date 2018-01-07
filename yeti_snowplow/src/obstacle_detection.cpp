@@ -40,7 +40,7 @@ private:
     ros::Subscriber scanSub;
     ros::Publisher obstaclePub;//ROS obstacle publisher
 
-    public:
+public:
     ObstacleDetection()
     {
         scanSub = n.subscribe("scan", 1, &ObstacleDetection::scanCallback, this);
@@ -52,7 +52,6 @@ private:
 		n.param("obstacle_detection_highThresh", highThresh, 50);
         n.param("obstacle_detection_lowThresh", lowThresh, 4);
         n.param("obstacle_detection_movingObstacleThreshold", movingObstacleThresh, 0.07);
-
     }
     void clearState()
     {
@@ -88,6 +87,7 @@ private:
     }
     void convertPointCloudToClass()
     {
+        lmsData.clear();
         for(int i =0; i < lidarData.size(); i++)
         {
             yeti_snowplow::lidar_point lidar_point;
@@ -98,6 +98,7 @@ private:
             lidar_point.distanceFromRobot = distanceFromRobot(lidar_point.x, lidar_point.y);
             lmsData.push_back(lidar_point);
         }
+	    ROS_INFO("convert point cloud done");
     }
     void addAndAnalyzeObstacle(int lastLinkedIndex, yeti_snowplow::obstacle& obstacle)
     {
@@ -153,29 +154,36 @@ private:
 
     void findObstacles()
     {
+	    ROS_INFO("find obstacles start");
         //Detect Obstacle
         clearObstacles();
         clearState();
 
         int j = 0;// forgive count variable
-        for (int i = 360; i < lmsData.size() - 361; ++i)
+        yeti_snowplow::obstacle *obstacle;
+        for (int i = 360; i < lmsData.size() - 361; ++i) //need to analyze full FOV for new localization?
         {
+	        ROS_INFO("find obstacle for loop start");
             yeti_snowplow::lidar_point currentPoint = lmsData[i];
+            ROS_INFO("got current point");
             bool isPointLinked = false;
-            yeti_snowplow::obstacle obstacle;
             if(currentPoint.distanceFromRobot < maxRadius)
             {
+                ROS_INFO("point less than max radius");
                 for(j = 1; j <= forgiveCount; j++ )
                 {
+                    ROS_INFO("still less than forgive count");
                     yeti_snowplow::lidar_point nextPoint = lmsData[i + 1];
                     double pointsDistance = distanceCalculator(currentPoint, nextPoint);
                     if(pointsDistance < nonSeparationThresh * j * MM2M)
                     {
                         linkPoint(currentPoint.distanceFromRobot, currentPoint.theta, pointsDistance);
+                        ROS_INFO("linked point");
                         isPointLinked = true;
                         if(!isAlreadyLinking)
                         { 
-                            obstacle.objStartIndex = i;
+                            obstacle->objStartIndex = i;
+                            ROS_INFO("assign start index");
                             isAlreadyLinking = true;
                         }
                         break;
@@ -186,8 +194,10 @@ private:
             {
                 if(isAlreadyLinking)
                 {
-                    obstacle.objEndIndex = i;
-                    addAndAnalyzeObstacle(i, obstacle);
+                    obstacle->objEndIndex = i;
+                    addAndAnalyzeObstacle(i, *obstacle);
+                    obstacle = new yeti_snowplow::obstacle;
+                    ROS_INFO("added new obstacle");
                 }
                 isAlreadyLinking = false;
                 clearState();
@@ -195,9 +205,10 @@ private:
             else
             {
                 i = i + j - 1;
+                ROS_INFO("shift index");
                 if(i > lmsData.size() - 361)
                 {
-                    addAndAnalyzeObstacle(i, obstacle);
+                    addAndAnalyzeObstacle(i, *obstacle);
                     clearState();
                 }
             }
@@ -223,8 +234,7 @@ private:
         sensor_msgs::PointCloud cloudData;
         projector_.projectLaser(*scannedData, cloudData);
         lidarData = cloudData.points;
-        convertPointCloudToClass();
-        findObstacles();
+	    ROS_INFO("scan callback done");
     }
     
     void publishObstacles()
@@ -232,6 +242,7 @@ private:
         yeti_snowplow::obstacles msg;
         msg.obstacles = obstacles;
         obstaclePub.publish(msg);
+	    // ROS_INFO("publish");
     }
 
 };
@@ -243,12 +254,15 @@ int main(int argc, char **argv){
 	ros::init(argc, argv, "obstacle_detection_node");
 
     ObstacleDetection obstacleDetection;
-	
+	ROS_INFO("init class");
     while(ros::ok())
     {
+	    ROS_INFO("while loop");
+        ros::spinOnce();
+        obstacleDetection.convertPointCloudToClass();
+        obstacleDetection.findObstacles();
         //Publish all obstacles
         obstacleDetection.publishObstacles();
-        ros::spinOnce();
     }
 	ros::spin();
 	
