@@ -92,7 +92,7 @@ int main(int argc, char **argv){
 
 	updateDriveMode();
 
-	ros::Subscriber joystickSub = n.subscribe("joystick_xbox360", 5, joystickCallback);
+	ros::Subscriber joystickSub = n.subscribe("/joystick/xbox360", 5, joystickCallback);
 	ros::Subscriber manualSub = n.subscribe("manual_control", 5, manualCallback);
 	ros::Subscriber autoSub = n.subscribe("auto_control", 5, autoCallback);
 

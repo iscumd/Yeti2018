@@ -81,8 +81,16 @@ void localizationCallback(const geometry_msgs::Pose2D::ConstPtr& location){
 	dx = currentTarget.location.x - location->x;
 	dy = currentTarget.location.y - location->y;
 	
-	c = cos(heading);
-	s = sin(heading);
+	//FIND DISTANCE AND ANGLE TO DESTINATION
+	cvar.targdist = sqrt(dx * dx + dy * dy);//current distance from the robot to the target
+	// desired angle is the desired Heading the robot should have at this instance if it were to be facing the target.
+	desiredAngle = adjust_angle(atan2(dx, dy), 2.0*M_PI);
+
+	//USED FOR WAYPOINT NAVIGATION
+	// cvar.right = dx * c - dy * s;
+	// cvar.front = dy * c + dx * s;
+	// c = cos(heading); //find Cosine term of the robots heading
+	// s = sin(heading); //find sine term of the robots heading
 
 	cvar.speed = currentTarget.speed;
 

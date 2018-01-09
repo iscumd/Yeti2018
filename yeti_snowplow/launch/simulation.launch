@@ -9,10 +9,10 @@
 	<!-- === Yeti Main === -->
 	<!-- LiDAR -->
 	<arg name="host" default="192.168.0.100" />
-	<node pkg="isc_sick" name="isc_sick" type="LMS1xx_node">
+	<!-- <node pkg="isc_sick" name="isc_sick" type="LMS1xx_node">
 		<param name="host" value="$(arg host)" />
 		<param name="frame_id" value="sick_laser_link" />
-	</node>
+	</node> -->
 	<!-- Obstacle Detection -->
 	<!-- <node pkg="yeti_snowplow" type="yeti_scan_to_xy" name="yeti_scan_to_xy" output="screen" /> -->
 	<node pkg="yeti_snowplow" type="obstacle_detection" name="obstacle_detection" output="screen" />
@@ -37,6 +37,6 @@
 
 	<!-- Roboteq -->
 	<param name="serial_port" value="/dev/ttyUSB0" />
-	<node pkg="isc_shared" type="roboteq" name="roboteq" output="screen"/>
+	<!-- <node pkg="isc_shared" type="roboteq" name="roboteq" output="screen"/> -->
 
 </launch>

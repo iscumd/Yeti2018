@@ -164,9 +164,21 @@ add_executable(yeti_drive_mode_control src/yeti_drive_mode_control.cpp)
 add_dependencies(yeti_drive_mode_control ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(yeti_drive_mode_control ${catkin_LIBRARIES})
 
-add_executable(navigation_pid src/navigation_pid.cpp)
-add_dependencies(navigation_pid ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(navigation_pid ${catkin_LIBRARIES})
+#add_executable(navigation_pid src/navigation_pid.cpp)
+#add_dependencies(navigation_pid ${PROJECT_NAME}_generate_messages_cpp)
+#target_link_libraries(navigation_pid ${catkin_LIBRARIES})
+
+add_executable(navigation_pid_speed src/navigation_pid_speed.cpp)
+add_dependencies(navigation_pid_speed ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(navigation_pid_speed ${catkin_LIBRARIES})
+
+add_executable(navigation_pid_turn src/navigation_pid_turn.cpp)
+add_dependencies(navigation_pid_turn ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(navigation_pid_turn ${catkin_LIBRARIES})
+
+add_executable(navigation_pid_velocity src/navigation_pid_velocity.cpp)
+add_dependencies(navigation_pid_velocity ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(navigation_pid_velocity ${catkin_LIBRARIES})
 
 add_executable(obstacle_detection src/obstacle_detection.cpp)
 add_dependencies(obstacle_detection ${PROJECT_NAME}_generate_messages_cpp)
@@ -184,9 +196,9 @@ add_executable(yeti_waypoint_selection src/yeti_waypoint_selection.cpp)
 add_dependencies(yeti_waypoint_selection ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(yeti_waypoint_selection ${catkin_LIBRARIES})
 
-add_executable(yeti_scan_to_xy src/yeti_scan_to_xy_node.cpp)
-add_dependencies(yeti_scan_to_xy ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(yeti_scan_to_xy ${catkin_LIBRARIES})
+#add_executable(yeti_scan_to_xy src/yeti_scan_to_xy_node.cpp)
+#add_dependencies(yeti_scan_to_xy ${PROJECT_NAME}_generate_messages_cpp)
+#target_link_libraries(yeti_scan_to_xy ${catkin_LIBRARIES})
 
 add_executable(localization_node src/localization_node.cpp)
 add_dependencies(localization_node ${PROJECT_NAME}_generate_messages_cpp)
