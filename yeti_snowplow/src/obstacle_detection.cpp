@@ -32,7 +32,8 @@ private:
     double sumOfHeadings = 0.0;
     double obstacleStopThreshold;
     geometry_msgs::Pose2D robotLocation;
-    vector<geometry_msgs::Point32> lidarData;
+    vector<float> lidarData;
+    double lidarDataAngularResolution = 0.0; //radians
     vector<yeti_snowplow::lidar_point> lmsData;
     vector<yeti_snowplow::obstacle> obstacles;
 
@@ -44,7 +45,7 @@ private:
 public:
     ObstacleDetection()
     {
-        scanSub = n.subscribe("scan", 1, &ObstacleDetection::scanCallback, this);
+        scanSub = n.subscribe("/scan", 1, &ObstacleDetection::scanCallback, this);
         obstaclePub = n.advertise<yeti_snowplow::obstacles>("/obstacle_detection/obstacles", 100);
         localizationSub = n.subscribe("/localization/robot_location", 100, &ObstacleDetection::localizationCallback, this);
 
@@ -54,6 +55,11 @@ public:
         n.param("obstacle_detection_lowThresh", lowThresh, 4);
         n.param("obstacle_detection_movingObstacleThreshold", movingObstacleThresh, 0.07);
     }
+
+    vector<float> getLidarData(){
+        return lidarData;
+    }
+
     void clearState()
     {
         sumOfPoints = 0;
@@ -89,16 +95,18 @@ public:
     void convertPointCloudToClass()
     {
         lmsData.clear();
-        for(int i =0; i < lidarData.size(); i++)
+        // cout << "lidarData.size()=" << lidarData.size() << endl;
+        double middleAngle = (135 * (M_PI / 180.0)); //radians
+        for(int i = 0; i < lidarData.size(); i++)
         {
             yeti_snowplow::lidar_point lidar_point;
-            lidar_point.x = lidarData[i].x;
-            lidar_point.y = lidarData[i].y;
+            lidar_point.x = lidarData[i] * cos(middleAngle - i * lidarDataAngularResolution);
+            lidar_point.y = lidarData[i] * sin(middleAngle - i * lidarDataAngularResolution);
             lidar_point.theta = atan(lidar_point.y/lidar_point.x);
             lidar_point.distanceFromRobot = distanceFromRobot(lidar_point.x, lidar_point.y);
             lmsData.push_back(lidar_point);
         }
-	    ROS_INFO("convert point cloud done");
+	    // ROS_INFO("convert point cloud done");
     }
     void addAndAnalyzeObstacle(int lastLinkedIndex, yeti_snowplow::obstacle& obstacle)
     {
@@ -158,29 +166,34 @@ public:
 
         int j = 0;// forgive count variable
         yeti_snowplow::obstacle *obstacle;
+        // cout << "lmsData.size()=" << lmsData.size() << endl;
+        if(lmsData.size() < 361){ //don't try to run if there isn't enough data in lmsData
+            return;
+        }
         for (int i = 360; i < lmsData.size() - 361; ++i) //need to analyze full FOV for new localization?
         {
-	        ROS_INFO("find obstacle for loop start");
+	        // ROS_INFO("find obstacle for loop start");
+            // cout << lmsData[i].x << ", " << lmsData[i].y << ", " << lmsData[i].distanceFromRobot << ", " << lmsData[i].theta << endl;
             yeti_snowplow::lidar_point currentPoint = lmsData[i];
-            ROS_INFO("got current point");
+            // ROS_INFO("got current point");
             bool isPointLinked = false;
             if(currentPoint.distanceFromRobot < maxRadius)
             {
-                ROS_INFO("point less than max radius");
+                // ROS_INFO("point less than max radius");
                 for(j = 1; j <= forgiveCount; j++ )
                 {
-                    ROS_INFO("still less than forgive count");
+                    // ROS_INFO("still less than forgive count");
                     yeti_snowplow::lidar_point nextPoint = lmsData[i + j];
                     double pointsDistance = distanceCalculator(currentPoint, nextPoint);
                     if(pointsDistance < nonSeparationThresh * j * MM2M)
                     {
                         linkPoint(currentPoint.distanceFromRobot, currentPoint.theta, pointsDistance);
-                        ROS_INFO("linking point");
+                        // ROS_INFO("linking point");
                         isPointLinked = true;
                         if(!isAlreadyLinking)
                         { 
                             obstacle->objStartIndex = i;
-                            ROS_INFO("assign start index");
+                            // ROS_INFO("assign start index");
                             isAlreadyLinking = true;
                         }
                         break;
@@ -202,7 +215,7 @@ public:
             else
             {
                 i = i + j - 1;
-                ROS_INFO("shift index");
+                // ROS_INFO("shift index");
                 if(i > lmsData.size() - 361)
                 {
                     addAndAnalyzeObstacle(i, *obstacle);
@@ -227,11 +240,18 @@ public:
         //location contains an array of points, which contains an x and a y relative to the robot
 
         //Projecting LaserScanData to PointCloudData
-        laser_geometry::LaserProjection projector_;
-        sensor_msgs::PointCloud cloudData;
-        projector_.projectLaser(*scannedData, cloudData);
-        lidarData = cloudData.points;
-	    ROS_INFO("scan callback done");
+        // laser_geometry::LaserProjection projector_;
+        // sensor_msgs::PointCloud cloudData;
+        // cout << scannedData->ranges.size() << ": ";
+        // for(int i = 0; i < scannedData->ranges.size(); i++){
+        //     cout << scannedData->ranges[i] << ",";
+        // }
+        // cout << endl;
+        // projector_.projectLaser(*scannedData, cloudData);
+        // lidarData = cloudData.points;
+        lidarData = scannedData->ranges;
+        lidarDataAngularResolution = scannedData->angle_increment; //radians
+	    // ROS_INFO("scan callback done");
     }
     
     void publishObstacles()
@@ -251,15 +271,17 @@ int main(int argc, char **argv){
 	ros::init(argc, argv, "obstacle_detection_node");
 
     ObstacleDetection obstacleDetection;
-	ROS_INFO("init class");
+	// ROS_INFO("init class");
     while(ros::ok())
     {
-	    ROS_INFO("while loop");
+	    // ROS_INFO("while loop");
         ros::spinOnce();
-        obstacleDetection.convertPointCloudToClass();
-        obstacleDetection.findObstacles();
-        //Publish all obstacles
-        obstacleDetection.publishObstacles();
+        if(obstacleDetection.getLidarData().size() > 0){ //make sure the array is filled before running
+            obstacleDetection.convertPointCloudToClass();
+            obstacleDetection.findObstacles();
+            //Publish all obstacles
+            obstacleDetection.publishObstacles();
+        }
     }
 	ros::spin();
 	
