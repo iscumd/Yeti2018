@@ -8,7 +8,8 @@
 #include <geometry_msgs/Pose2D.h>
 #include <yeti_snowplow/obstacle.h>
 #include <yeti_snowplow/obstacles.h>
-  
+
+#define M_PI           3.14159265358979323846  /* pi */
 using namespace std;
 
 class ObstacleDetection
@@ -24,14 +25,15 @@ private:
     const double movingObstacleSize = 0.45;
     double movingObstacleThresh;
     int linkedCount;
-    int sumOfPoints;
-    int obsSizeNum;
+    double sumOfPoints;
+    double obsSizeNum;
     bool isAlreadyLinking = false;
     bool isThereAnObstacle = false;
     double sumOfHeadings = 0.0;
     double obstacleStopThreshold;
     geometry_msgs::Pose2D robotLocation;
-    vector<geometry_msgs::Point32> lidarData;
+    vector<float> lidarData;
+    double lidarDataAngularResolution = 0.0; //radians
     vector<yeti_snowplow::lidar_point> lmsData;
     vector<yeti_snowplow::obstacle> obstacles;
 
@@ -40,10 +42,10 @@ private:
     ros::Subscriber scanSub;
     ros::Publisher obstaclePub;//ROS obstacle publisher
 
-    public:
+public:
     ObstacleDetection()
     {
-        scanSub = n.subscribe("scan", 1, &ObstacleDetection::scanCallback, this);
+        scanSub = n.subscribe("/scan", 1, &ObstacleDetection::scanCallback, this);
         obstaclePub = n.advertise<yeti_snowplow::obstacles>("/obstacle_detection/obstacles", 100);
         localizationSub = n.subscribe("/localization/robot_location", 100, &ObstacleDetection::localizationCallback, this);
 
@@ -52,8 +54,12 @@ private:
 		n.param("obstacle_detection_highThresh", highThresh, 50);
         n.param("obstacle_detection_lowThresh", lowThresh, 4);
         n.param("obstacle_detection_movingObstacleThreshold", movingObstacleThresh, 0.07);
-
     }
+
+    vector<float> getLidarData(){
+        return lidarData;
+    }
+
     void clearState()
     {
         sumOfPoints = 0;
@@ -88,94 +94,104 @@ private:
     }
     void convertPointCloudToClass()
     {
-        for(int i =0; i < lidarData.size(); i++)
+        lmsData.clear();
+        double middleAngle = (135 * (M_PI / 180.0)); //radians
+        for(int i = 0; i < lidarData.size(); i++)
         {
             yeti_snowplow::lidar_point lidar_point;
-            lidar_point.x = lidarData[i].x;
-            lidar_point.y = lidarData[i].y;
+            lidar_point.x = lidarData[i] * cos(middleAngle - i * lidarDataAngularResolution);
+            lidar_point.y = lidarData[i] * sin(middleAngle - i * lidarDataAngularResolution);
             lidar_point.theta = atan(lidar_point.y/lidar_point.x);
-            if((lidar_point.x / cos(lidar_point.theta)) == (lidar_point.y / sin(lidar_point.theta)))
             lidar_point.distanceFromRobot = distanceFromRobot(lidar_point.x, lidar_point.y);
             lmsData.push_back(lidar_point);
         }
+	    // ROS_INFO("convert point cloud done");
     }
-    void addAndAnalyzeObstacle(int lastLinkedIndex, yeti_snowplow::obstacle& obstacle)
+    void addAndAnalyzeObstacle(int lastLinkedIndex, yeti_snowplow::obstacle obstacle)
     {
         double index = (lastLinkedIndex - linkedCount) / 2;
         double mag = sumOfPoints / linkedCount;
-        double avgTheta = sumOfHeadings / linkedCount;
-        bool isOutsideTheField = false;
-        // double robotPositionX = 0.0;
-        // double robotPositionY = 0.0;
-        //double theta = atan(robotPositionY / robotPositionX);
-        obstacle.x = mag * cos(avgTheta);
-        obstacle.y = mag * sin(avgTheta);
+        //double avgTheta = sumOfHeadings / linkedCount;
+        double obstacleAngle = ((135 - index * 0.25) * (M_PI / 180.0)) + robotLocation.theta;
+        obstacle.x = robotLocation.x + mag * sin(obstacleAngle);
+        obstacle.y = robotLocation.y + mag * cos(obstacleAngle);
 
-        if (mag < maxRadius || linkedCount > highThresh || linkedCount < lowThresh)
+        if (mag > maxRadius || linkedCount > highThresh || linkedCount < lowThresh)
         {
             //Obstacle is not needed
-            clearState();
+        }
+        else if(obstacle.x == 0.0 && obstacle.y == 0.0){
+            //the object is at infinity
+        }
+        //figure out if the object is within the plowing field or not
+        else if (obstacle.x > 4.75 || obstacle.x < -1.750 || obstacle.y > 11.75 || obstacle.y < -2.75)//check if obstacle is outside of Triple I field
+        //else if (obstacle.x > 1.75 || obstacle.x < -1.750 || obstacle.y > 11.75 || obstacle.y < -2.75)//check if obstacle is outside of Single I field
+        {  
+            //outside the field; ignore
         }
         else
         {
-            //figure out if the object is within the plowing field or not
-            if (obstacle.x > 4.75 || obstacle.x < -1.750 || obstacle.y > 11.75 || obstacle.y < -2.75)//check if obstacle is outside of Triple Ifield
-            //if (obstacle.x > 1.75 || obstacle.x < -1.750 || obstacle.y > 11.75 || obstacle.y < -2.75)//check if obstacle is outside of Single Ifield
-            { isOutsideTheField = true; }
-            if(!isOutsideTheField)
+            obstacle.startPoint = lmsData[obstacle.objStartIndex];
+            obstacle.endPoint = lmsData[obstacle.objEndIndex];
+            
+            obstacle.distance = mag;
+            obstacle.obsRoughSize = obsSizeNum;
+            obstacle.obsLineSize = distanceCalculator(obstacle.startPoint, obstacle.endPoint); 
+
+            if(mag < 5)
             {
-                obstacle.startPoint = lmsData[obstacle.objStartIndex];
-                obstacle.endPoint = lmsData[obstacle.objEndIndex];
-                
-                obstacle.distance = mag;
-                obstacle.obsRoughSize = obsSizeNum;
-                obstacle.obsLineSize = distanceCalculator(obstacle.startPoint, obstacle.endPoint); 
-
-                if(mag < 5)
+                if(abs(obstacle.obsLineSize - movingObstacleSize) < movingObstacleThresh)
                 {
-                    if(abs(obstacle.obsLineSize - movingObstacleSize) < movingObstacleThresh)
-                    {
-                        obstacle.isAMovingObstacle = true;
-                        ROS_INFO("Moving Obstacle detected");
-                    }
-                    else
-                    {
-                        obstacle.isAMovingObstacle = true;
-                        ROS_INFO("Dynamic Obstacle detected");
-                    }
+                    obstacle.isAMovingObstacle = true;
+                    // ROS_INFO("Moving Obstacle detected");
                 }
-
-                obstacles.push_back(obstacle);
+                else
+                {
+                    obstacle.isAMovingObstacle = false;
+                    // ROS_INFO("Static Obstacle detected");
+                }
             }
+
+            obstacles.push_back(obstacle);
         }
         clearState();
     }
 
     void findObstacles()
     {
+	    // ROS_INFO("find obstacles start");
         //Detect Obstacle
         clearObstacles();
         clearState();
 
         int j = 0;// forgive count variable
-        for (int i = 360; i < lmsData.size() - 361; ++i)
+        yeti_snowplow::obstacle *obstacle = new yeti_snowplow::obstacle;
+        if(lmsData.size() < 361){ //don't try to run if there isn't enough data in lmsData
+            return;
+        }
+        for (int i = 360; i < lmsData.size() - 361; ++i) //need to analyze full FOV for new localization?
         {
+	        // ROS_INFO("find obstacle for loop start");
             yeti_snowplow::lidar_point currentPoint = lmsData[i];
+            // ROS_INFO("got current point");
             bool isPointLinked = false;
-            yeti_snowplow::obstacle obstacle;
-            if(currentPoint.distanceFromRobot < maxRadius)
+            if(currentPoint.distanceFromRobot < maxRadius && currentPoint.distanceFromRobot != 0.0)
             {
+                // ROS_INFO("point less than max radius");
                 for(j = 1; j <= forgiveCount; j++ )
                 {
-                    yeti_snowplow::lidar_point nextPoint = lmsData[i + 1];
+                    // ROS_INFO("still less than forgive count");
+                    yeti_snowplow::lidar_point nextPoint = lmsData[i + j];
                     double pointsDistance = distanceCalculator(currentPoint, nextPoint);
                     if(pointsDistance < nonSeparationThresh * j * MM2M)
                     {
                         linkPoint(currentPoint.distanceFromRobot, currentPoint.theta, pointsDistance);
+                        // ROS_INFO("linking point");
                         isPointLinked = true;
                         if(!isAlreadyLinking)
                         { 
-                            obstacle.objStartIndex = i;
+                            obstacle->objStartIndex = i;
+                            // ROS_INFO("assign start index");
                             isAlreadyLinking = true;
                         }
                         break;
@@ -186,8 +202,10 @@ private:
             {
                 if(isAlreadyLinking)
                 {
-                    obstacle.objEndIndex = i;
-                    addAndAnalyzeObstacle(i, obstacle);
+                    obstacle->objEndIndex = i;
+                    addAndAnalyzeObstacle(i, *obstacle);
+                    obstacle = new yeti_snowplow::obstacle;
+                    // ROS_INFO("added new obstacle");
                 }
                 isAlreadyLinking = false;
                 clearState();
@@ -195,9 +213,10 @@ private:
             else
             {
                 i = i + j - 1;
+                // ROS_INFO("shift index");
                 if(i > lmsData.size() - 361)
                 {
-                    addAndAnalyzeObstacle(i, obstacle);
+                    addAndAnalyzeObstacle(i, *obstacle);
                     clearState();
                 }
             }
@@ -218,13 +237,9 @@ private:
         /* This fires every time a new obstacle scan is published */
         //location contains an array of points, which contains an x and a y relative to the robot
 
-        //Projecting LaserScanData to PointCloudData
-        laser_geometry::LaserProjection projector_;
-        sensor_msgs::PointCloud cloudData;
-        projector_.projectLaser(*scannedData, cloudData);
-        lidarData = cloudData.points;
-        convertPointCloudToClass();
-        findObstacles();
+        lidarData = scannedData->ranges;
+        lidarDataAngularResolution = scannedData->angle_increment; //radians
+	    // ROS_INFO("scan callback done");
     }
     
     void publishObstacles()
@@ -232,6 +247,7 @@ private:
         yeti_snowplow::obstacles msg;
         msg.obstacles = obstacles;
         obstaclePub.publish(msg);
+	    // ROS_INFO("publish");
     }
 
 };
@@ -243,12 +259,17 @@ int main(int argc, char **argv){
 	ros::init(argc, argv, "obstacle_detection_node");
 
     ObstacleDetection obstacleDetection;
-	
+	// ROS_INFO("init class");
     while(ros::ok())
     {
-        //Publish all obstacles
-        obstacleDetection.publishObstacles();
+	    // ROS_INFO("while loop");
         ros::spinOnce();
+        if(obstacleDetection.getLidarData().size() > 0){ //make sure the array is filled before running
+            obstacleDetection.convertPointCloudToClass();
+            obstacleDetection.findObstacles();
+            //Publish all obstacles
+            obstacleDetection.publishObstacles();
+        }
     }
 	ros::spin();
 	
