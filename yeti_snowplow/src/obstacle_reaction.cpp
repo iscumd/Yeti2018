@@ -34,6 +34,7 @@ public:
 		waypointClient = n.serviceClient<yeti_snowplow::waypoint>("waypoint");
 		scanSub = n.subscribe("scan", 1000, &ObstacleReaction::scanCallback,this);
 		velocityPub  = n.advertise<geometry_msgs::Twist>("/obstacle_reactance/velocity", 1000);
+		obstaclesSub = n.subscribe("/obstacle_detection/obstacles", 1, &ObstacleReaction::obstacleCallback, this);
 		
 		n.param("maximum_navigation_speed", maxSpeed, 0.7);
 		n.param("obstacle_turn_boost", turnBoost, -1.2);
@@ -46,6 +47,12 @@ public:
 		robotLocation.x = robotPosition->x;
 		robotLocation.y = robotPosition->y;
 		robotLocation.theta = robotPosition->theta;
+	}
+
+	void obstacleCallback(const yeti_snowplow::obstacles::ConstPtr& classifiedObstacles){
+	//determine robot location
+	//(vector<yeti_snowplow::obstacle> CLM, geometry_msgs::Pose2D robotLocation, double tolerance, float Lspeed, float Rspeed, float minSpeed)
+		obstacles = classifiedObstacles->obstacles;
 	}
 
 	void getNextWaypoint()
@@ -75,10 +82,12 @@ public:
 	
 		//Projecting LaserScanData to PointCloudData
 		newLidarDataRecieved = true;
-		laser_geometry::LaserProjection projector_;
-		sensor_msgs::PointCloud cloudData;
-		projector_.projectLaser(*scannedData, cloudData);
-		lidarData = cloudData.points;
+		// laser_geometry::LaserProjection projector_;
+		// sensor_msgs::PointCloud cloudData;
+		// projector_.projectLaser(*scannedData, cloudData);
+		// lidarData = cloudData.points;
+		lidarData = scannedData->ranges;
+        lidarDataAngularResolution = scannedData->angle_increment; //radians
 	}
 
 	void obstacleReactance()
@@ -87,7 +96,7 @@ public:
 		geometry_msgs::Twist msg;
 		yeti_snowplow::turn turnMsg;
 		getNextWaypoint();
-		obstacles = buffer.combinedUpdatePoints(lidarData);
+		buffer.combinedUpdatePoints(lidarData, lidarDataAngularResolution);
 		//Creates List of LiDAR points which have a positive Y value, and are within the Buffer distance threshold
 		
 		//look at angle needed to go to target waypoint, if there is an obstacle in the way, then find what turn angle is needed to avoid it to the right. 
@@ -119,13 +128,15 @@ public:
 			//turn unchanged
 			speed = 1 / (1 + 1 * abs(turn)) * (double)dir;
             speed = (double)turn * min(abs(speed), 1.0);
-            leftSpeed = (float)((speed + turnBoost * turn) * maxSpeed * navSpeed);//controlvarspeed is read in from text file, and limits speed by a percentage
-            rightSpeed = (float)((speed - turnBoost * turn) * maxSpeed * navSpeed);
+            // leftSpeed = (float)((speed + turnBoost * turn) * maxSpeed * navSpeed);//controlvarspeed is read in from text file, and limits speed by a percentage
+            // rightSpeed = (float)((speed - turnBoost * turn) * maxSpeed * navSpeed);
 		}
 		else if (rightAngle == buffer.DOOM && leftAngle == buffer.DOOM )//There is no way to avoid anything to the left or the right, so back up.
         {
-            leftSpeed = reverseSpeed * (float)maxSpeed * (float) .25;
-            rightSpeed = reverseSpeed * (float)maxSpeed * (float) .25;
+            // leftSpeed = reverseSpeed * (float)maxSpeed * (float) .25;
+            // rightSpeed = reverseSpeed * (float)maxSpeed * (float) .25;
+			speed = reverseSpeed * (float)maxSpeed * (float) .25;
+
             ROS_INFO("I reached DOOM!");
         }
 		else
@@ -143,8 +154,8 @@ public:
             //speed slower as turn steeper 
             speed = 1 / (1 + 1 * abs(turn)) * (double)dir;
             speed = (double)dir * min(abs(speed), 1.0);
-            leftSpeed = (float)((speed + turnBoost * .5 *  turn) * maxSpeed  * navSpeed);
-            rightSpeed = (float)((speed - turnBoost * .5* turn) * maxSpeed *   navSpeed);
+            // leftSpeed = (float)((speed + turnBoost * .5 *  turn) * maxSpeed  * navSpeed);
+            // rightSpeed = (float)((speed - turnBoost * .5* turn) * maxSpeed *   navSpeed);
 		}
 		//Needs review
 		msg.linear.x = speed;
@@ -167,11 +178,13 @@ private:
 	ros::Subscriber robotPositionSub;
 	ros::ServiceClient waypointClient;
 	ros::Subscriber scanSub;
+	ros::Subscriber obstaclesSub;
 	ros::Publisher velocityPub;
 	vector<yeti_snowplow::obstacle> obstacles;
 	vector<yeti_snowplow::obstacle> obstaclesInFront;
-	vector<geometry_msgs::Point32> lidarData;
+	vector<float> lidarData;
 	geometry_msgs::Pose2D robotLocation;
+    double  lidarDataAngularResolution;
 	double rightAngle; 
 	double leftAngle;
 	double leftSpeed;

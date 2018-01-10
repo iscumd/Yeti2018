@@ -34,6 +34,7 @@ private:
     const int BADCOUNTTHRESH = 5;// maximum number of LiDAR points associated with a turn angle to be considered not sage (IE if bad count > BADCOUNTTHRESH, then the robot will hit an obstacle. 
     const double ANGLE_SAMPLES = 18;// the number of angles to try to avoid an obstacle
     const double SAMPLING_ANGLE = M_PI /ANGLE_SAMPLES;// figures out the angle between each sample angle
+    double lidarDataAngularResolution;
 public:
     const double DOOM = (-135.0) * 2.0 * M_PI / 360.0;//this is bad....
     std::vector<yeti_snowplow::location_point> combinedBufPoints;//stores the list of LiDAR points which are within the buffer of the robot.
@@ -175,20 +176,23 @@ public:
         return DOOM;
     }
 
-    vector<yeti_snowplow::obstacle> combinedUpdatePoints(const vector<geometry_msgs::Point32> lidarPoints)
+    vector<yeti_snowplow::obstacle> combinedUpdatePoints(const vector<float> lidarPoints, double  lidarAngle)
     {
         combinedBufPoints.clear();
         badCount = 0; 
-
-        for(geometry_msgs::Point32 lidarPoint : lidarPoints)
+        double middleAngle = (135 * (M_PI / 180.0)); //radians
+        for(int i =0; i < lidarPoints.size(); i++)
         {
-            if(sqrt(pow(lidarPoint.x, 2) + pow(lidarPoint.y, 2)) < combinedBufferLength)
+            double thisX = lidarPoints[i] * cos(middleAngle - i * lidarAngle);
+            double thisY = lidarPoints[i] * sin(middleAngle - i * lidarAngle);
+    
+            if(sqrt(pow(thisX, 2) + pow(thisY, 2)) < combinedBufferLength)
             {
-                if(lidarPoint.y > 0)
+                if(thisY > 0)
                 {
                     yeti_snowplow::location_point locationPoint;
-                    locationPoint.x = lidarPoint.x;
-                    locationPoint.y = lidarPoint.y;
+                    locationPoint.x = thisX;
+                    locationPoint.y = thisY;
                     combinedBufPoints.push_back(locationPoint);
                 }
             }
