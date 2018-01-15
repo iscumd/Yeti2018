@@ -69,7 +69,6 @@ sensor_msgs::PointCloud importLandMarks(string filename)
 	{
 		numLandmarks++;
 	}
-	ROS_INFO("There are %d landmarks. They are: ", numLandmarks);
 	file.close();
 
 	sensor_msgs::PointCloud importedLandmarkLocations;//allocate space for landmark points
@@ -89,13 +88,17 @@ sensor_msgs::PointCloud importLandMarks(string filename)
 			landmarkPoint.y=atof(lineFields[1].c_str());
 			// importedLandmarkLocations.points[landmarkNum].x = atof(lineFields[0].c_str());
 			// importedLandmarkLocations.points[landmarkNum].y = atof(lineFields[1].c_str());
-			ROS_INFO("Landmark %d: \tX: %f\tY:%f",landmarkNum, landmarkPoint.x, landmarkPoint.y);
 			landmarkNum++;
 
 			importedLandmarkLocations.points.push_back(landmarkPoint);
 		}
 	}
 	file.close();
+
+	ROS_INFO("There are %d landmarks. They are: ", (int)importedLandmarkLocations.points.size());
+	for(int i = 0; i < importedLandmarkLocations.points.size(); i++){
+		ROS_INFO("Landmark %d: \tX: %f\tY:%f", i, importedLandmarkLocations.points[i].x, importedLandmarkLocations.points[i].y);
+	}
 
 	return importedLandmarkLocations;
 }
