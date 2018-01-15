@@ -133,7 +133,7 @@ public:
         {
             obstacle.startPoint = lmsData[obstacle.objStartIndex];
             obstacle.endPoint = lmsData[obstacle.objEndIndex];
-            
+            obstacle.heading = obstacleAngle;
             obstacle.distance = mag;
             obstacle.obsRoughSize = obsSizeNum;
             obstacle.obsLineSize = distanceCalculator(obstacle.startPoint, obstacle.endPoint); 
