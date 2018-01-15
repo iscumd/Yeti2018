@@ -125,7 +125,7 @@ public:
         }
         //figure out if the object is within the plowing field or not
         else if (obstacle.x > 4.75 || obstacle.x < -1.750 || obstacle.y > 11.75 || obstacle.y < -2.75)//check if obstacle is outside of Triple I field
-        //else if (obstacle.x > 1.75 || obstacle.x < -1.750 || obstacle.y > 11.75 || obstacle.y < -2.75)//check if obstacle is outside of Single I field
+        // else if (obstacle.x > 1.75 || obstacle.x < -1.750 || obstacle.y > 11.75 || obstacle.y < -2.75)//check if obstacle is outside of Single I field
         {  
             //outside the field; ignore
         }
@@ -260,6 +260,7 @@ int main(int argc, char **argv){
 
     ObstacleDetection obstacleDetection;
 	// ROS_INFO("init class");
+	ros::Rate loopRate(25); //Hz
     while(ros::ok())
     {
 	    // ROS_INFO("while loop");
@@ -270,6 +271,7 @@ int main(int argc, char **argv){
             //Publish all obstacles
             obstacleDetection.publishObstacles();
         }
+		loopRate.sleep();
     }
 	ros::spin();
 	
