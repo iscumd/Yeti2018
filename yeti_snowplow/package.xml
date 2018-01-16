@@ -59,6 +59,7 @@
   <run_depend>laser_geometry</run_depend>
   <run_depend>isc_shared</run_depend>
   <run_depend>isc_sick</run_depend>
+  <!-- <run_depend>localization_lidar_odom</run_depend> -->
 
 
   <!-- The export tag contains other, unspecified, tags -->
