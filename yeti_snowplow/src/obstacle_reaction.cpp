@@ -35,10 +35,12 @@ public:
 		scanSub = n.subscribe("scan", 1000, &ObstacleReaction::scanCallback,this);
 		velocityPub  = n.advertise<geometry_msgs::Twist>("/obstacle_reactance/velocity", 1000);
 		obstaclesSub = n.subscribe("/obstacle_detection/obstacles", 1, &ObstacleReaction::obstacleCallback, this);
-		
+		getNextWaypoint();
+
 		n.param("maximum_navigation_speed", maxSpeed, 0.7);
 		n.param("obstacle_turn_boost", turnBoost, -1.2);
 		n.param("obstacle_reaction_reverse_speed", reverseSpeed, -0.5);
+		n.param("target_distance_from_robot_threshold", targetDistThreshold, 0.5);
 
 		
 	}
@@ -67,12 +69,12 @@ public:
 			dir = wayPointInfo.response.waypoint.dir;
 			navSpeed = wayPointInfo.response.waypoint.speed;
 			nextWayPoint = wayPointInfo.response.waypoint.location;
+			wayPointID++;
 		}
 		else{
 			ROS_INFO("Failed to call service");
 		}
-
-		wayPointID++;
+		
 	}
 
 	void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scannedData)
@@ -95,15 +97,13 @@ public:
 		Buffer buffer;
 		geometry_msgs::Twist msg;
 		yeti_snowplow::turn turnMsg;
-		getNextWaypoint();
+
 		buffer.combinedUpdatePoints(lidarData, lidarDataAngularResolution);
-		//Creates List of LiDAR points which have a positive Y value, and are within the Buffer distance threshold
-		
+		//Creates List of LiDAR points which have a positive Y value, and are within the Buffer distance threshold		
 		//look at angle needed to go to target waypoint, if there is an obstacle in the way, then find what turn angle is needed to avoid it to the right. 
 		double rightAngle = buffer.combinedRightWheelScan(nextWayPoint);
 		//look at angle needed to go to target waypoint, if there is an obstacle in the way, then find what turn angle is needed to avoid it to the left. 
 		double leftAngle = buffer.combinedLeftWheelScan(nextWayPoint);
-
 		
 		for(yeti_snowplow::obstacle object : obstacles)
 		{
@@ -134,7 +134,7 @@ public:
 		else if (rightAngle == buffer.DOOM && leftAngle == buffer.DOOM )//There is no way to avoid anything to the left or the right, so back up.
         {
             // leftSpeed = reverseSpeed * (float)maxSpeed * (float) .25;
-            // rightSpeed = reverseSpeed * (float)maxSpeed * (float) .25;
+          l // rightSpeed = reverseSpeed * (float)maxSpeed * (float) .25;
 			speed = reverseSpeed * (float)maxSpeed * (float) .25;
 
             ROS_INFO("I reached DOOM!");
@@ -166,6 +166,17 @@ public:
 		// turnMsg.stop = movingObstacleDetected;
 		// turnPub.publish(turnMsg);
 	}
+	void hasTargetBeenReached()
+	{
+		double differenceInX = nextWayPoint.x - robotLocation.x;
+		double differenceInY = nextWayPoint.y - robotLocation.y;
+		double targetDistanceFromRobot = sqrt((differenceInX * differenceInX) + (differenceInY * differenceInY));
+
+		if(targetDistanceFromRobot < targetDistThreshold)
+		{
+			getNextWaypoint();
+		}
+	}
 	bool newData()
 	{
 		return newLidarDataRecieved;
@@ -196,6 +207,7 @@ private:
 	double turnBoost;
 	double maxSpeed;
 	double reverseSpeed;
+	double targetDistThreshold;
 	bool movingObstacleDetected;
 	bool newLidarDataRecieved;
 	int dir;
@@ -211,8 +223,9 @@ int main(int argc, char **argv){
 	{
 		if(obstacleReaction.newData())
 		{
-		obstacleReaction.obstacleReactance();
-		ros::spinOnce();
+			obstacleReaction.hasTargetBeenReached();
+			obstacleReaction.obstacleReactance();
+			ros::spinOnce();
 		}
 	}
 	

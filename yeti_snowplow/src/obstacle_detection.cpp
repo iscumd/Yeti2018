@@ -31,9 +31,13 @@ private:
     bool isThereAnObstacle = false;
     double sumOfHeadings = 0.0;
     double obstacleStopThreshold;
+    double minObstacleXPosition;
+    double maxObstacleXPosition;
+    double minObstacleYPosition;
+    double maxObstacleYPosition;
     geometry_msgs::Pose2D robotLocation;
     vector<float> lidarData;
-    double lidarDataAngularResolution = 0.0; //radians
+    double lidarDataAngularResolution = 0.25; //radians
     vector<yeti_snowplow::lidar_point> lmsData;
     vector<yeti_snowplow::obstacle> obstacles;
 
@@ -54,6 +58,10 @@ public:
 		n.param("obstacle_detection_highThresh", highThresh, 50);
         n.param("obstacle_detection_lowThresh", lowThresh, 4);
         n.param("obstacle_detection_movingObstacleThreshold", movingObstacleThresh, 0.07);
+        n.param("obstacle_min_x_position", minObstacleXPosition, -1.750);
+        n.param("obstacle_max_x_position", maxObstacleXPosition, 4.75);
+        n.param("obstacle_min_y_position", minObstacleYPosition, -2.75);
+        n.param("obstacle_max_y_position", maxObstacleYPosition, 11.75);
     }
 
     vector<float> getLidarData(){
@@ -101,7 +109,7 @@ public:
             yeti_snowplow::lidar_point lidar_point;
             lidar_point.x = lidarData[i] * cos(middleAngle - i * lidarDataAngularResolution);
             lidar_point.y = lidarData[i] * sin(middleAngle - i * lidarDataAngularResolution);
-            lidar_point.theta = atan(lidar_point.y/lidar_point.x);
+            lidar_point.theta = atan2(lidar_point.y / lidar_point.x);
             lidar_point.distanceFromRobot = distanceFromRobot(lidar_point.x, lidar_point.y);
             lmsData.push_back(lidar_point);
         }
@@ -124,7 +132,7 @@ public:
             //the object is at infinity
         }
         //figure out if the object is within the plowing field or not
-        else if (obstacle.x > 4.75 || obstacle.x < -1.750 || obstacle.y > 11.75 || obstacle.y < -2.75)//check if obstacle is outside of Triple I field
+        else if (obstacle.x > maxObstacleXPosition || obstacle.x < minObstacleXPosition || obstacle.y > maxObstacleYPosition || obstacle.y < minObstacleYPosition)//check if obstacle is outside of Triple I field
         //else if (obstacle.x > 1.75 || obstacle.x < -1.750 || obstacle.y > 11.75 || obstacle.y < -2.75)//check if obstacle is outside of Single I field
         {  
             //outside the field; ignore
@@ -169,7 +177,7 @@ public:
         if(lmsData.size() < 361){ //don't try to run if there isn't enough data in lmsData
             return;
         }
-        for (int i = 360; i < lmsData.size() - 361; ++i) //need to analyze full FOV for new localization?
+        for (int i = 360; i < lmsData.size() - 361; i++) //need to analyze full FOV for new localization?
         {
 	        // ROS_INFO("find obstacle for loop start");
             yeti_snowplow::lidar_point currentPoint = lmsData[i];
