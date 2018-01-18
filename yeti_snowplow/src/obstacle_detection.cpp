@@ -109,20 +109,24 @@ public:
             yeti_snowplow::lidar_point lidar_point;
             lidar_point.x = lidarData[i] * cos(middleAngle - i * lidarDataAngularResolution);
             lidar_point.y = lidarData[i] * sin(middleAngle - i * lidarDataAngularResolution);
+<<<<<<< HEAD
             lidar_point.theta = atan2(lidar_point.y / lidar_point.x);
+=======
+            lidar_point.theta = atan2(lidar_point.y, lidar_point.x);
+>>>>>>> ecf59bfb08e1c141bf69e85aff4012f6f11d55e3
             lidar_point.distanceFromRobot = distanceFromRobot(lidar_point.x, lidar_point.y);
             lmsData.push_back(lidar_point);
         }
 	    // ROS_INFO("convert point cloud done");
     }
-    void addAndAnalyzeObstacle(int lastLinkedIndex, yeti_snowplow::obstacle obstacle)
+    void addAndAnalyzeObstacle(yeti_snowplow::obstacle obstacle)
     {
-        double index = (lastLinkedIndex - linkedCount) / 2;
+        double index = (obstacle.objEndIndex - linkedCount) / 2;
         double mag = sumOfPoints / linkedCount;
         //double avgTheta = sumOfHeadings / linkedCount;
-        double obstacleAngle = ((135 - index * 0.25) * (M_PI / 180.0)) + robotLocation.theta;
-        obstacle.x = robotLocation.x + mag * sin(obstacleAngle);
-        obstacle.y = robotLocation.y + mag * cos(obstacleAngle);
+        double obstacleAngle = ((135 - index * lidarDataAngularResolution) * (M_PI / 180.0)) + robotLocation.theta;
+        obstacle.x = robotLocation.x + mag * cos(obstacleAngle);
+        obstacle.y = robotLocation.y + mag * sin(obstacleAngle);
 
         if (mag > maxRadius || linkedCount > highThresh || linkedCount < lowThresh)
         {
@@ -132,8 +136,13 @@ public:
             //the object is at infinity
         }
         //figure out if the object is within the plowing field or not
+<<<<<<< HEAD
         else if (obstacle.x > maxObstacleXPosition || obstacle.x < minObstacleXPosition || obstacle.y > maxObstacleYPosition || obstacle.y < minObstacleYPosition)//check if obstacle is outside of Triple I field
         //else if (obstacle.x > 1.75 || obstacle.x < -1.750 || obstacle.y > 11.75 || obstacle.y < -2.75)//check if obstacle is outside of Single I field
+=======
+        else if (obstacle.x > 4.75 || obstacle.x < -1.750 || obstacle.y > 11.75 || obstacle.y < -2.75)//check if obstacle is outside of Triple I field
+        // else if (obstacle.x > 1.75 || obstacle.x < -1.750 || obstacle.y > 11.75 || obstacle.y < -2.75)//check if obstacle is outside of Single I field
+>>>>>>> ecf59bfb08e1c141bf69e85aff4012f6f11d55e3
         {  
             //outside the field; ignore
         }
@@ -174,10 +183,15 @@ public:
 
         int j = 0;// forgive count variable
         yeti_snowplow::obstacle *obstacle = new yeti_snowplow::obstacle;
-        if(lmsData.size() < 361){ //don't try to run if there isn't enough data in lmsData
+        int minIndex = 360; //need to analyze full FOV for new localization?
+        if(lmsData.size() < (minIndex + 1)){ //don't try to run if there isn't enough data in lmsData
             return;
         }
+<<<<<<< HEAD
         for (int i = 360; i < lmsData.size() - 361; i++) //need to analyze full FOV for new localization?
+=======
+        for (int i = minIndex; i < lmsData.size() - (minIndex + 1); ++i)
+>>>>>>> ecf59bfb08e1c141bf69e85aff4012f6f11d55e3
         {
 	        // ROS_INFO("find obstacle for loop start");
             yeti_snowplow::lidar_point currentPoint = lmsData[i];
@@ -211,7 +225,7 @@ public:
                 if(isAlreadyLinking)
                 {
                     obstacle->objEndIndex = i;
-                    addAndAnalyzeObstacle(i, *obstacle);
+                    addAndAnalyzeObstacle(*obstacle);
                     obstacle = new yeti_snowplow::obstacle;
                     // ROS_INFO("added new obstacle");
                 }
@@ -222,9 +236,10 @@ public:
             {
                 i = i + j - 1;
                 // ROS_INFO("shift index");
-                if(i > lmsData.size() - 361)
+                if(i > lmsData.size() - (minIndex + 1))
                 {
-                    addAndAnalyzeObstacle(i, *obstacle);
+                    obstacle->objEndIndex = i;
+                    addAndAnalyzeObstacle(*obstacle);
                     clearState();
                 }
             }
@@ -268,6 +283,7 @@ int main(int argc, char **argv){
 
     ObstacleDetection obstacleDetection;
 	// ROS_INFO("init class");
+	ros::Rate loopRate(25); //Hz
     while(ros::ok())
     {
 	    // ROS_INFO("while loop");
@@ -278,6 +294,7 @@ int main(int argc, char **argv){
             //Publish all obstacles
             obstacleDetection.publishObstacles();
         }
+		loopRate.sleep();
     }
 	ros::spin();
 	

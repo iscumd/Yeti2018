@@ -17,8 +17,8 @@
 	<!-- <node pkg="yeti_snowplow" type="yeti_scan_to_xy" name="yeti_scan_to_xy" output="screen" /> -->
 	<node pkg="yeti_snowplow" type="obstacle_detection" name="obstacle_detection" output="screen" />
 	<!-- Localization -->
-	<param name="localizaion_landmark_location_file" value="$(find yeti_snowplow)/data/landmark_locations_Qualification.txt" />
-	<node pkg="yeti_snowplow" type="localization_node" name="localization_node" output="screen" />
+	<!-- <param name="localizaion_landmark_location_file" value="$(find yeti_snowplow)/data/landmark_locations_Qualification.txt" /> -->
+	<node pkg="localization_lidar_odom" type="localization_lidar_odom.py" name="localization_lidar_odom" output="screen" />
 	<!-- Obstacle Reactance -->
 	<node pkg="yeti_snowplow" type="obstacle_reaction" name="obstacle_reaction" output="screen" />
 	<!-- Waypoint -->
