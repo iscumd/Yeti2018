@@ -1,0 +1,8 @@
+<launch>
+	<!-- Navigation PID -->
+	<node pkg="yeti_snowplow" type="navigation_pid_speed" name="navigation_pid_speed" output="screen" />
+	<node pkg="yeti_snowplow" type="navigation_pid_turn" name="navigation_pid_turn" output="screen" />
+	<node pkg="yeti_snowplow" type="navigation_pid_velocity" name="navigation_pid_velocity" output="screen" />
+
+    <node pkg="yeti_snowplow" type="navigation_pid_test" name="navigation_pid_test" output="screen" />
+</launch>
