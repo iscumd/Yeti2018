@@ -134,7 +134,7 @@ public:
 		else if (rightAngle == buffer.DOOM && leftAngle == buffer.DOOM )//There is no way to avoid anything to the left or the right, so back up.
         {
             // leftSpeed = reverseSpeed * (float)maxSpeed * (float) .25;
-          l // rightSpeed = reverseSpeed * (float)maxSpeed * (float) .25;
+        	// rightSpeed = reverseSpeed * (float)maxSpeed * (float) .25;
 			speed = reverseSpeed * (float)maxSpeed * (float) .25;
 
             ROS_INFO("I reached DOOM!");
