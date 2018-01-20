@@ -193,7 +193,7 @@ class StallDetection
 
         if ((pow(maxX - minX, 2) + pow(maxY - minY, 2) < noMovementTolerance) 
             && maxHeading - minHeading < noRotationTolerance && eStopStatus && 
-            (expectedVelocity.linear.x != actualVelocity.linear.x) || (expectedVelocity.angular.z != actualVelocity.linear.z))
+            (expectedVelocity.linear.x != actualVelocity.linear.x) || (expectedVelocity.angular.z != actualVelocity.angular.z))
                 {
                     stallDetected = true;
                     ptime t(second_clock::local_time());//save the time which slipping was detected 
@@ -232,14 +232,14 @@ int main(int argc, char **argv)
                 stallVelocity.angular.z = 0.0;
                 stallVelocityPub.publish(stallVelocity);
             }
-            else
-            {
-                //Send Normal Speed
-                double normalSpeed = stallDetection.getExpectedVelocity();
-                stallVelocity.linear.x = normalSpeed;
-                stallVelocity.angular.z = 0.0;
-                stallVelocityPub.publish(stallVelocity);
-            }
+            // else
+            // {
+            //     //Send Normal Speed
+            //     double normalSpeed = stallDetection.getExpectedVelocity();
+            //     stallVelocity.linear.x = normalSpeed;
+            //     stallVelocity.angular.z = 0.0;
+            //     stallVelocityPub.publish(stallVelocity);
+            // }
             navigationPIDStatusPub.publish(navigationOff);
         }
 	

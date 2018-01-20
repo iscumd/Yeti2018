@@ -178,7 +178,7 @@ public:
         if(lmsData.size() < (minIndex + 1)){ //don't try to run if there isn't enough data in lmsData
             return;
         }
-        for (int i = 360; i < lmsData.size() - 361; i++) //need to analyze full FOV for new localization?
+        for (int i = minIndex; i < lmsData.size() - minIndex + 1; i++) //need to analyze full FOV for new localization?
         {
 	        // ROS_INFO("find obstacle for loop start");
             yeti_snowplow::lidar_point currentPoint = lmsData[i];
