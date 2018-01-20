@@ -1,6 +1,7 @@
 #include "ros/ros.h"
 #include "geometry_msgs/Pose2D.h"
 #include "geometry_msgs/Twist.h"
+#include "std_msgs/Bool.h"
 #include "std_msgs/Float64.h"
 #include "isc_shared/drive_mode.h"
 #include "yeti_snowplow/location_point.h"
@@ -39,8 +40,9 @@ ros::Publisher pub;
 geometry_msgs::Twist currentTargetVelocity;
 geometry_msgs::Twist realVelocity;
 double lastTime, thisTime;
-double maxIntErr = 0.5; //TODO: ros param
-bool pidEnable = true;
+double maxIntErr;
+bool isAutoMode = false;
+bool stallDisable = false;
 
 double mathSign(double number){
 	//Returns the number's sign
@@ -74,17 +76,18 @@ void initPID(){
 }
 
 void driveModeCallback(const isc_shared::drive_mode::ConstPtr& msg){
+	isAutoMode = false;
 	if(msg->mode == "auto"){
-		pidEnable = true;
+		isAutoMode = true;
 	}
-	else{
-		pidEnable = false;
-	}
+}
+
+void stallDisableCallback(const std_msgs::Bool::ConstPtr& msg){
+	stallDisable = msg->data;
 }
 
 void obstacleReactanceVelocityCallback(const geometry_msgs::Twist::ConstPtr& velocity){	
 	/* This fires every time a new velocity is published */
-	if(!pidEnable){return;}
 
 	if(velocity->linear.x != currentTargetVelocity.linear.x || velocity->angular.z != currentTargetVelocity.angular.z){
 		// previousTargetVelocity = currentTargetVelocity;
@@ -123,8 +126,6 @@ void pid(){
 		dErr = (pErr - lastpErr) / dt; // calculate the derrivative error
 	}
 	if (cos(pErr) > 0.5){ //if the robot is not facing more than +-60 degrees away from the target
-		kP = 0.5;
-		//why is kI and kD not assigned? They'll be 0
 		turn = -(kP * sin(pErr) *2 + kI * iErr + kD * dErr);  //Nattu; calulate how much the robot should turn at this instant.
 	}
 	else { //if the robot is facing more than 60 degrees away from the target
@@ -140,13 +141,19 @@ void pid(){
 int main(int argc, char **argv){
 	ros::init(argc, argv, "navigation_pid_turn");
 
-	ros::NodeHandle n;
+	ros::NodeHandle n("~");
+
+	n.param<double>("proportional_constant", kP, 0.5);
+	n.param<double>("derivative_constant", kD, 0.0);
+	n.param<double>("integral_constant", kI, 0.0);
+	n.param<double>("integral_max_error", maxIntErr, 0.5);
 
 	pub = n.advertise<std_msgs::Float64>("/navigation/turn", 5);
 
 	initPID();
 
 	ros::Subscriber driveModeSub = n.subscribe("/yeti/drive_mode", 5, driveModeCallback);
+	ros::Subscriber stallDisableSub = n.subscribe("/navigation/disable", 5, stallDisableCallback);
 
 	ros::Subscriber reactanceVelocitySub = n.subscribe("/obstacle_reactance/velocity", 5, obstacleReactanceVelocityCallback);
 	ros::Subscriber localizationVelocitySub = n.subscribe("/localization/velocity", 5, localizationVelocityCallback);
@@ -155,7 +162,7 @@ int main(int argc, char **argv){
 	ros::Rate loopRate(100); //Hz
 	while(ros::ok()) {
 		ros::spinOnce();
-		if(pidEnable){
+		if(!isAutoMode && !stallDisable){
 			pid();
 		}
 		loopRate.sleep();

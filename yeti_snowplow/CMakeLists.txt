@@ -180,6 +180,10 @@ add_executable(navigation_pid_velocity src/navigation_pid_velocity.cpp)
 add_dependencies(navigation_pid_velocity ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(navigation_pid_velocity ${catkin_LIBRARIES})
 
+add_executable(navigation_pid_test src/navigation_pid_test.cpp)
+add_dependencies(navigation_pid_test ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(navigation_pid_test ${catkin_LIBRARIES})
+
 add_executable(obstacle_detection src/obstacle_detection.cpp)
 add_dependencies(obstacle_detection ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(obstacle_detection ${catkin_LIBRARIES})
