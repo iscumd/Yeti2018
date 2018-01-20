@@ -208,6 +208,10 @@ add_executable(localization_node src/localization_node.cpp)
 add_dependencies(localization_node ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(localization_node ${catkin_LIBRARIES})
 
+add_executable(stall_detection src/stall_detection_node.cpp)
+add_dependencies(stall_detection ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(stall_detection ${catkin_LIBRARIES})
+
 #############
 ## Install ##
 #############
